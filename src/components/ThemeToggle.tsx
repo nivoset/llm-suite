@@ -1,23 +1,44 @@
 'use client';
 
-import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
 
 export function ThemeToggle() {
-  const [mounted, setMounted] = useState(false);
-  const { theme, setTheme } = useTheme();
+  const [isDark, setIsDark] = useState(false);
 
-  // Avoid hydration mismatch
-  useEffect(() => setMounted(true), []);
-  if (!mounted) return null;
+  useEffect(() => {
+    // Check initial theme from localStorage or system preference
+    const savedTheme = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    
+    setIsDark(savedTheme === 'dark' || (!savedTheme && prefersDark));
+    
+    // Apply initial theme
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const newTheme = !isDark;
+    setIsDark(newTheme);
+    
+    // Update DOM and localStorage
+    if (newTheme) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  };
 
   return (
     <button
-      onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-      className="fixed bottom-4 right-4 p-3 rounded-full bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors"
-      aria-label="Toggle theme"
+      onClick={toggleTheme}
+      className="fixed bottom-4 right-4 p-3 rounded-full bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 cursor-pointer"
+      aria-label={`Switch to ${isDark ? 'light' : 'dark'} theme`}
     >
-      {theme === 'dark' ? (
+      {isDark ? (
         // Sun icon for dark mode
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -26,6 +47,7 @@ export function ThemeToggle() {
           strokeWidth={1.5}
           stroke="currentColor"
           className="w-6 h-6 text-yellow-500"
+          aria-hidden="true"
         >
           <path
             strokeLinecap="round"
@@ -42,6 +64,7 @@ export function ThemeToggle() {
           strokeWidth={1.5}
           stroke="currentColor"
           className="w-6 h-6 text-blue-900"
+          aria-hidden="true"
         >
           <path
             strokeLinecap="round"

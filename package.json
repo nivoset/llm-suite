@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@heroicons/react": "^2.2.0",
     "@langchain/community": "^0.3.46",
     "@langchain/core": "^0.3.59",
     "@langchain/openai": "^0.5.13",
@@ -29,6 +30,7 @@
     "@types/react-dom": "^19.1.6",
     "eslint": "^9.29.0",
     "eslint-config-next": "15.3.4",
+    "prettier": "^3.5.3",
     "tailwindcss": "^4.1.10",
     "typescript": "^5.8.3"
   }

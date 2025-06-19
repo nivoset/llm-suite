@@ -68,7 +68,7 @@ export function ChatPanel({ messages, onSendMessage, context }: ChatPanelProps) 
         <div ref={messagesEndRef} />
       </div>
 
-      <form onSubmit={handleSubmit} className="mt-auto">
+      <form onSubmit={handleSubmit} className="p-4 border-t border-gray-200 dark:border-gray-700">
         <div className="flex gap-2">
           <input
             type="text"
@@ -81,7 +81,7 @@ export function ChatPanel({ messages, onSendMessage, context }: ChatPanelProps) 
           <button
             type="submit"
             disabled={isLoading}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+            className={`px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-colors`}
           >
             {isLoading ? (
               <span className="flex items-center gap-2">

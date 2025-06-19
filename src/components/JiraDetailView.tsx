@@ -1,123 +1,146 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { loadJiraDocuments } from '~/llm/jira';
 import { JiraCard } from './JiraCard';
 import { ChatMessage, ChatPanel } from './ChatPanel';
+import { useJiraAnalysis } from '~/hooks/useJiraAnalysis';
+import { useQueryParameter } from '~/hooks/useQueryParameter';
+import type { JiraDocument } from '~/types/jira';
 
 interface JiraDetailViewProps {
   issueKey: string;
 }
 
 export function JiraDetailView({ issueKey }: JiraDetailViewProps) {
-  const [activeTab, setActiveTab] = useState('chat');
+  const [activeTab, setActiveTab] = useQueryParameter('tab', 'chat');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
 
-  const { data: jiraCards, isLoading, error } = useQuery({
+  const { data: jiraCards, isLoading, error, refetch: refetchCard } = useQuery({
     queryKey: ['jira-cards', 'SCRUM'],
     queryFn: async () => {
       const docs = await loadJiraDocuments({ 
         projectKey: 'SCRUM',
+        searchQuery: `key = ${issueKey}`,
       });
       return docs;
     },
-    select: (data) => data.filter(doc => doc.metadata.key === issueKey)
   });
 
-  const jiraCard = jiraCards?.[0];
+  const jiraCard = jiraCards?.find(doc => doc.metadata.key === issueKey);
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900 dark:border-gray-100"></div>
-      </div>
-    );
-  }
+  const { data: analysis, isLoading: isAnalysisLoading, refetch: refetchAnalysis } = useJiraAnalysis(jiraCard);
 
-  if (error || !jiraCard) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="bg-red-50 dark:bg-red-900 text-red-800 dark:text-red-200 p-4 rounded-lg shadow max-w-lg">
-          <h3 className="text-lg font-semibold mb-2">Error Loading Jira Card</h3>
-          <p>{error?.message || 'Card not found'}</p>
-        </div>
-      </div>
-    );
+  const handleRefresh = async () => {
+    await refetchCard();
+    if (activeTab === 'analysis') {
+      await refetchAnalysis();
+    }
+  };
+
+  if (!jiraCard) {
+    return <div>Loading...</div>;
   }
 
   return (
-    <div className="flex h-screen bg-white dark:bg-gray-900">
-      {/* Left panel - Jira details */}
-      <div className="w-1/2 p-6 border-r border-gray-200 dark:border-gray-700 overflow-y-auto">
-        <JiraCard doc={jiraCard} isDetailView />
-      </div>
+    <div className="@container min-h-screen bg-white dark:bg-gray-900">
+      <div className="grid @[1000px]:grid-cols-2 grid-cols-1 h-full">
+        {/* Left panel - Jira details */}
+        <div className="p-6 @[1000px]:border-r border-b @[1000px]:border-b-0 border-gray-200 dark:border-gray-700">
+          <JiraCard 
+            doc={jiraCard} 
+            isDetailView 
+            onRefresh={handleRefresh}
+            isRefreshing={isLoading || (activeTab === 'analysis' && isAnalysisLoading)}
+          />
+        </div>
 
-      {/* Right panel - Chat interface */}
-      <div className="w-1/2 flex flex-col">
-        <div className="border-b border-gray-200 dark:border-gray-700">
-          <nav className="flex">
+        {/* Right panel - Chat interface */}
+        <div className="flex flex-col">
+          {/* Tabs */}
+          <div className="flex border-b border-gray-200 dark:border-gray-700">
             <button
-              className={`px-4 py-2 font-medium ${
+              role="tab"
+              aria-selected={activeTab === 'chat'}
+              aria-controls="chat-panel"
+              className={`flex-1 py-4 px-6 text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${
                 activeTab === 'chat'
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-gray-500 hover:text-gray-700'
+                  ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
+                  : 'text-gray-500 dark:text-gray-400'
               }`}
               onClick={() => setActiveTab('chat')}
             >
               Chat
             </button>
             <button
-              className={`px-4 py-2 font-medium ${
+              role="tab"
+              aria-selected={activeTab === 'analysis'}
+              aria-controls="analysis-panel"
+              className={`flex-1 py-4 px-6 text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${
                 activeTab === 'analysis'
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-gray-500 hover:text-gray-700'
+                  ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
+                  : 'text-gray-500 dark:text-gray-400'
               }`}
               onClick={() => setActiveTab('analysis')}
             >
               Analysis
             </button>
-            <button
-              className={`px-4 py-2 font-medium ${
-                activeTab === 'tasks'
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-              onClick={() => setActiveTab('tasks')}
-            >
-              Tasks
-            </button>
-          </nav>
-        </div>
+          </div>
 
-        <div className="flex-1 p-6">
-          {activeTab === 'chat' && (
-            <ChatPanel
-              messages={messages}
-              onSendMessage={async (message) => {
-                const newMessage: ChatMessage = {
-                  role: 'user',
-                  content: message,
-                  timestamp: new Date().toISOString(),
-                };
-                setMessages((prev) => [...prev, newMessage]);
-                // TODO: Implement AI response
-              }}
-              context={jiraCard}
-            />
-          )}
-          {activeTab === 'analysis' && (
-            <div className="text-gray-600 dark:text-gray-300">
-              <h3 className="text-lg font-medium mb-4">Analysis</h3>
-              <p>Coming soon: AI-powered analysis of the Jira issue.</p>
-            </div>
-          )}
-          {activeTab === 'tasks' && (
-            <div className="text-gray-600 dark:text-gray-300">
-              <h3 className="text-lg font-medium mb-4">Tasks</h3>
-              <p>Coming soon: AI-generated task breakdown and suggestions.</p>
-            </div>
-          )}
+          {/* Tab content */}
+          <div className="flex-1 overflow-auto">
+            {activeTab === 'chat' ? (
+              <div id="chat-panel" role="tabpanel" aria-labelledby="chat-tab" className="h-full">
+                <ChatPanel 
+                  messages={messages} 
+                  onSendMessage={async (msg: string) => {
+                    setMessages([...messages, { role: 'user', content: msg, timestamp: new Date().toISOString() }]);
+                  }}
+                  context={jiraCard}
+                />
+              </div>
+            ) : (
+              <div id="analysis-panel" role="tabpanel" aria-labelledby="analysis-tab" className="p-6">
+                {isAnalysisLoading ? (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                  </div>
+                ) : analysis ? (
+                  <div className="space-y-6">
+                    <section>
+                      <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">Business Analysis</h2>
+                      <p className="text-gray-700 dark:text-gray-300">{analysis.businessAnalysis}</p>
+                    </section>
+                    <section>
+                      <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">Architectural Analysis</h2>
+                      <p className="text-gray-700 dark:text-gray-300">{analysis.architecturalAnalysis}</p>
+                    </section>
+                    <section>
+                      <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">Development Analysis</h2>
+                      <p className="text-gray-700 dark:text-gray-300">{analysis.developmentAnalysis}</p>
+                    </section>
+                    <section>
+                      <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">Key Questions</h2>
+                      <ul className="list-disc list-inside space-y-2 text-gray-700 dark:text-gray-300">
+                        {analysis.questions.map((q, i) => (
+                          <li key={i}>{q}</li>
+                        ))}
+                      </ul>
+                    </section>
+                    <section>
+                      <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">Recommendations</h2>
+                      <ul className="list-disc list-inside space-y-2 text-gray-700 dark:text-gray-300">
+                        {analysis.recommendations.map((r, i) => (
+                          <li key={i}>{r}</li>
+                        ))}
+                      </ul>
+                    </section>
+                  </div>
+                ) : null}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

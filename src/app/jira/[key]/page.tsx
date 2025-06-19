@@ -1,13 +1,15 @@
 'use client';
 
+import { use } from 'react';
 import { JiraDetailView } from '~/components/JiraDetailView';
 
 interface JiraDetailPageProps {
-  params: {
+  params: Promise<{
     key: string;
-  };
+  }>;
 }
 
 export default function JiraDetailPage({ params }: JiraDetailPageProps) {
-  return <JiraDetailView issueKey={params.key} />;
+  const { key } = use(params);
+  return <JiraDetailView issueKey={key} />;
 } 

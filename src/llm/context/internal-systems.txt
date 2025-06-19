@@ -1,0 +1,119 @@
+# Internal Systems Context
+
+## ServiceNow RSAM (Risk and Security Assessment Management)
+
+### Authentication
+- Access requires valid ServiceNow instance credentials
+- Use OAuth2 flow for secure authentication
+- Store credentials securely using keyring:
+  ```python
+  import keyring
+  keyring.set_password("servicenow_instance", "username", "password")
+  ```
+
+### API Endpoints
+- Base URL: https://{instance}.service-now.com/api/now/
+- Key endpoints:
+  - /table/risk_assessment
+  - /table/risk_assessment_task 
+  - /table/risk_assessment_finding
+  - /table/risk_assessment_metric
+
+### Common Operations
+- GET /api/now/table/risk_assessment - List all risk assessments
+- POST /api/now/table/risk_assessment - Create new assessment
+- GET /api/now/table/risk_assessment/{sys_id} - Get specific assessment
+- PUT /api/now/table/risk_assessment/{sys_id} - Update assessment
+- DELETE /api/now/table/risk_assessment/{sys_id} - Delete assessment
+
+### Query Parameters
+- sysparm_query: Encoded query string
+- sysparm_fields: Comma-separated list of fields to return
+- sysparm_display_value: all|true|false (show display values)
+- sysparm_exclude_reference_link: true|false
+- sysparm_limit: Maximum records to return
+
+## API Gateway Configuration
+
+### Authentication Methods
+1. API Key Authentication:
+   - Required in X-API-Key header
+   - Keys stored in secure key store
+   - Format: UUID v4
+   - Example: 7a26cae9-ed29-40b3-bc99-5b1914bb8498
+
+2. OAuth2:
+   - Authorization code flow
+   - Client credentials flow for service accounts
+   - Token endpoint: /oauth2/token
+   - Userinfo endpoint: /oauth2/userinfo
+
+### Rate Limiting
+- Default: 1000 requests per minute per API key
+- Burst: 50 requests per second
+- Headers:
+  - X-RateLimit-Limit
+  - X-RateLimit-Remaining
+  - X-RateLimit-Reset
+
+### Security Policies
+1. Input Validation:
+   - JSON payload limits:
+     - Max depth: 5
+     - Max key length: 100
+     - Max string length: 100000
+     - Max tokens: 1000
+
+2. SSL/TLS:
+   - TLS 1.2 or higher required
+   - Strong cipher suites only
+   - Client certificates optional
+
+3. CORS:
+   - Allowed origins: Internal domains only
+   - Methods: GET, POST, PUT, DELETE
+   - Headers: Content-Type, Authorization, X-API-Key
+
+### Error Responses
+- 400: Bad Request - Invalid input
+- 401: Unauthorized - Missing or invalid credentials
+- 403: Forbidden - Valid credentials but insufficient permissions
+- 429: Too Many Requests - Rate limit exceeded
+- 500: Internal Server Error - Server-side error
+
+### Logging
+- Access logs: All requests with timestamps
+- Error logs: Full stack traces
+- Audit logs: Authentication and authorization events
+- Format: JSON with correlation IDs
+
+### Monitoring
+- Health check endpoint: /health
+- Metrics endpoint: /metrics
+- Status codes monitored
+- Response times tracked
+- Error rates monitored
+
+## Integration Guidelines
+
+### Best Practices
+1. Always use HTTPS
+2. Implement retry logic with exponential backoff
+3. Handle rate limiting gracefully
+4. Log correlation IDs
+5. Validate responses
+6. Use appropriate timeouts
+
+### Error Handling
+1. Implement circuit breakers
+2. Log all errors with context
+3. Graceful degradation
+4. User-friendly error messages
+5. Proper status code mapping
+
+### Performance
+1. Connection pooling
+2. Keep-alive connections
+3. Compression enabled
+4. Response caching where appropriate
+5. Batch operations when possible 
