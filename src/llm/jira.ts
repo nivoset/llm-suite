@@ -23,6 +23,7 @@ interface JiraStatus {
   statusCategory?: {
     key: string;
     name: string;
+    colorName?: string;
   };
 }
 
@@ -49,6 +50,10 @@ interface JiraFields {
   duedate?: string;
   components?: JiraComponent[];
   issuetype?: JiraIssueType;
+  parent?: {
+    key: string;
+    fields: JiraFields;
+  };
   [key: string]: any;
 }
 
@@ -70,6 +75,35 @@ class CustomJiraLoader extends JiraProjectLoader {
         throw new Error('Invalid response format from Jira API');
       }
 
+      // First pass: Create a map of epics and their children
+      const epicMap = new Map<string, {
+        title: string;
+        status: string;
+        children: Array<{key: string; title: string; status: string}>;
+      }>();
+
+      issues.forEach((issue: JiraIssue) => {
+        const fields = issue.fields;
+        
+        // If this is an epic, initialize its entry in the map
+        if (fields.issuetype?.name === 'Epic') {
+          epicMap.set(issue.key, {
+            title: fields.summary,
+            status: fields.status?.name || 'To Do',
+            children: []
+          });
+        }
+
+        // If this issue belongs to an epic, add it to the epic's children
+        if (fields.parent?.key && epicMap.has(fields.parent.key)) {
+          epicMap.get(fields.parent.key)?.children.push({
+            key: issue.key,
+            title: fields.summary,
+            status: fields.status?.name || 'To Do'
+          });
+        }
+      });
+
       const docs = issues.map((issue: JiraIssue) => {
         console.log('CustomJiraLoader: Processing issue:', issue.key);
         const fields = issue.fields;
@@ -88,10 +122,20 @@ Components: ${(fields.components || []).map(c => c.name).join(', ') || 'None'}
 Created: ${fields.created || 'Unknown'}
 Updated: ${fields.updated || 'Unknown'}
 Due Date: ${fields.duedate || 'None'}
+${fields.parent?.key ? `Parent Epic: ${fields.parent.key} - ${fields.parent.fields.summary}` : ''}
 `.trim();
 
         // Construct the issue URL
         const issueUrl = `${this.host}/browse/${issue.key}`;
+
+        // Get epic information if this issue belongs to one
+        const epicKey = fields.parent?.key;
+        const epic = epicKey ? epicMap.get(epicKey) : undefined;
+
+        // Get child issues if this is an epic
+        const childIssues = issue.fields.issuetype?.name === 'Epic' 
+          ? epicMap.get(issue.key)?.children
+          : undefined;
 
         // Return a plain object instead of a Document instance
         return {
@@ -119,7 +163,11 @@ Due Date: ${fields.duedate || 'None'}
             issueType: fields.issuetype?.name,
             issueTypeIcon: fields.issuetype?.iconUrl,
             issueUrl,
-            rawFields: fields // Include all raw fields for complete access
+            epicKey: fields.parent?.key,
+            epicTitle: fields.parent?.fields.summary,
+            epicColor: fields.parent?.fields.status?.statusCategory?.colorName,
+            childIssues,
+            rawFields: fields
           }
         };
       });

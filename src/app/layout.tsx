@@ -40,11 +40,13 @@ export default function RootLayout({
         `}</style>
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white dark:bg-gray-900 min-h-screen`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white dark:bg-gray-900 min-h-[100dvh] flex flex-col`}
       >
         <ThemeInitializer />
         <Providers>
-          {children}
+          <main className="flex-1 flex flex-col">
+            {children}
+          </main>
         </Providers>
         <ThemeToggle />
       </body>

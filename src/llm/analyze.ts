@@ -59,6 +59,8 @@ Analyze the Jira issue from a business perspective, focusing on:
 4. Potential risks
 5. Success metrics
 
+Your analysis should be concise and avoid duplicating technical or implementation details that would be better covered by the architect or developer perspectives.
+
 Context from internal systems:
 ${state.context}
 `);
@@ -85,11 +87,13 @@ async function architectNode(state: AnalysisState) {
 - Security architecture
 
 Analyze the Jira issue from an architectural perspective, focusing on:
-1. Technical approach
-2. System dependencies
-3. Scalability considerations
+1. Technical approach and system design
+2. Integration and dependencies
+3. Scalability and performance considerations
 4. Security implications
-5. Integration points
+5. Technical risks
+
+Focus on high-level technical decisions and architectural impacts. Avoid duplicating business context or low-level implementation details.
 
 Context from internal systems:
 ${state.context}
@@ -117,11 +121,13 @@ async function developerNode(state: AnalysisState) {
 - Maintainability
 
 Analyze the Jira issue from a development perspective, focusing on:
-1. Implementation challenges
-2. Testing approach
-3. Performance considerations
-4. Maintenance concerns
-5. Development risks
+1. Implementation approach and complexity
+2. Testing strategy and requirements
+3. Code maintainability considerations
+4. Development risks and challenges
+5. Technical dependencies
+
+Focus on concrete implementation details and development concerns. Avoid duplicating high-level architectural decisions or business context.
 
 Context from internal systems:
 ${state.context}
@@ -142,7 +148,9 @@ Components: ${state.issue.metadata.components?.join(', ') || 'None'}`);
 
 async function questionExtractorNode(state: AnalysisState) {
   const prompt = PromptTemplate.fromTemplate(`
-Based on the following analyses, identify the key questions that need to be answered:
+Based on the following analyses, identify the key questions that need to be answered.
+Group related questions together and eliminate any duplicates.
+Focus on questions that bridge multiple perspectives (business, architecture, development).
 
 Business Analysis:
 {businessAnalysis}
@@ -155,6 +163,7 @@ Development Analysis:
 
 List the top 5-7 most important questions that need to be clarified, ordered by priority.
 Format as a JSON array of strings.
+Each question should be prefixed with its primary category: [Business], [Technical], or [Implementation].
 `);
 
   const response = await prompt

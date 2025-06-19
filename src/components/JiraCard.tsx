@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import type { JiraDocument } from '~/types/jira';
 import { ArrowPathIcon } from '@heroicons/react/24/outline';
+import { createElement } from 'react';
 
 interface JiraCardProps {
   doc: JiraDocument;
@@ -74,8 +75,12 @@ function renderAdfNode(node: any): React.ReactNode {
       return <li className="ml-4">{node.content?.map((child: any, i: number) => renderAdfNode(child))}</li>;
     
     case 'heading':
-      const HeadingTag = `h${node.attrs?.level || 1}` as keyof JSX.IntrinsicElements;
-      return <HeadingTag className="font-bold mb-2 mt-4">{node.content?.map((child: any, i: number) => renderAdfNode(child))}</HeadingTag>;
+      const level = Math.min(Math.max(node.attrs?.level || 1, 1), 6);
+      return createElement(
+        `h${level}`,
+        { className: "font-bold mb-2 mt-4" },
+        node.content?.map((child: any, i: number) => renderAdfNode(child))
+      );
     
     case 'codeBlock':
       return (
@@ -137,100 +142,111 @@ export function JiraCard({ doc, isDetailView = false, onRefresh, isRefreshing = 
           {isDetailView && onRefresh && (
             <button
               onClick={onRefresh}
-              disabled={isRefreshing}
-              aria-label="Refresh card and analysis"
-              aria-disabled={isRefreshing}
-              className={`p-2 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 cursor-pointer ${isRefreshing ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                isRefreshing ? 'animate-spin' : ''
+              }`}
+              aria-label="Refresh card"
             >
-              <ArrowPathIcon className={`w-5 h-5 text-blue-600 dark:text-blue-400 ${isRefreshing ? 'animate-spin' : ''}`} aria-hidden="true" />
-              <span className="sr-only">
-                {isRefreshing ? 'Refreshing...' : 'Refresh card and analysis'}
-              </span>
+              <ArrowPathIcon className="h-5 w-5 text-gray-600 dark:text-gray-300" />
             </button>
           )}
         </div>
       </div>
-      
-      {/* Labels section */}
-      {doc.metadata.labels && doc.metadata.labels.length > 0 && (
-        <div className="bg-gray-50 dark:bg-gray-900 px-3 py-2">
-          <div className="flex flex-wrap gap-1">
-            {doc.metadata.labels.map((label, index) => (
-              <span
-                key={index}
-                className="px-2 py-0.5 bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 rounded-full text-xs"
-              >
-                {label}
-              </span>
-            ))}
+
+      {/* Epic context if available */}
+      {doc.metadata.epicKey && (
+        <div className="bg-purple-50 dark:bg-purple-900/30 px-3 py-2 border-b border-purple-100 dark:border-purple-800">
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-purple-600 dark:text-purple-400">Epic:</span>
+            <Link
+              href={`/jira/${doc.metadata.epicKey}`}
+              className="text-purple-700 dark:text-purple-300 hover:underline"
+            >
+              {doc.metadata.epicTitle}
+            </Link>
           </div>
         </div>
       )}
 
-      {/* Content section */}
+      {/* Main content */}
       <div className="p-4">
-        <h3 className="font-medium mb-2">{doc.metadata.title}</h3>
+        <h2 className="text-lg font-semibold mb-3 text-gray-900 dark:text-gray-100">
+          {doc.metadata.title}
+        </h2>
+        
         {doc.metadata.description && (
-          <div className={`text-gray-600 dark:text-gray-300 text-sm ${isDetailView ? '' : 'line-clamp-3'}`}>
+          <div className="prose dark:prose-invert max-w-none mb-4">
             {renderAdfContent(doc.metadata.description)}
           </div>
         )}
-        
-        {isDetailView && doc.metadata.components && doc.metadata.components.length > 0 && (
+
+        {/* Child issues if this is an epic */}
+        {doc.metadata.childIssues && doc.metadata.childIssues.length > 0 && (
           <div className="mt-4">
-            <h4 className="text-sm font-medium mb-2">Components</h4>
-            <div className="flex flex-wrap gap-1">
-              {doc.metadata.components.map((component, index) => (
-                <span
-                  key={index}
-                  className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded text-xs"
-                >
-                  {component}
-                </span>
+            <h3 className="text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">Child Issues:</h3>
+            <div className="space-y-2">
+              {doc.metadata.childIssues.map((child) => (
+                <div key={child.key} className="flex items-center justify-between bg-gray-50 dark:bg-gray-700/50 rounded p-2">
+                  <Link
+                    href={`/jira/${child.key}`}
+                    className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                  >
+                    {child.key} - {child.title}
+                  </Link>
+                  <span className="text-xs px-2 py-1 rounded bg-gray-100 dark:bg-gray-600">
+                    {child.status}
+                  </span>
+                </div>
               ))}
             </div>
           </div>
         )}
-      </div>
 
-      {/* Footer with assignee and date */}
-      <div className="border-t border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between">
-        <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
-          {doc.metadata.assigneeAvatar && (
-            <Image
-              src={doc.metadata.assigneeAvatar}
-              alt={doc.metadata.assignee || 'Assignee'}
-              width={24}
-              height={24}
-              className="rounded-full"
-            />
-          )}
-          <span>{doc.metadata.assignee || 'Unassigned'}</span>
-        </div>
-        <div className="flex flex-col items-end text-xs text-gray-600 dark:text-gray-400">
-          <span>
-            Updated: {new Date(doc.metadata.updated || '').toLocaleDateString()}
-          </span>
-          {isDetailView && doc.metadata.created && (
-            <span>
-              Created: {new Date(doc.metadata.created).toLocaleDateString()}
-            </span>
-          )}
+        {/* Metadata footer */}
+        <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-400">
+            {doc.metadata.assignee && (
+              <div className="flex items-center gap-2">
+                {doc.metadata.assigneeAvatar && (
+                  <Image
+                    src={doc.metadata.assigneeAvatar}
+                    alt={doc.metadata.assignee}
+                    width={20}
+                    height={20}
+                    className="rounded-full"
+                  />
+                )}
+                <span>{doc.metadata.assignee}</span>
+              </div>
+            )}
+            {doc.metadata.priority && (
+              <div className="flex items-center gap-1">
+                {doc.metadata.priorityIcon && (
+                  <Image
+                    src={doc.metadata.priorityIcon}
+                    alt={doc.metadata.priority}
+                    width={16}
+                    height={16}
+                  />
+                )}
+                <span>{doc.metadata.priority}</span>
+              </div>
+            )}
+            {doc.metadata.labels && doc.metadata.labels.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {doc.metadata.labels.map((label) => (
+                  <span
+                    key={label}
+                    className="px-2 py-0.5 text-xs rounded-full bg-gray-100 dark:bg-gray-700"
+                  >
+                    {label}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
-      
-      {isDetailView && (
-        <div className="border-t border-gray-200 dark:border-gray-700 p-4">
-          <a
-            href={doc.metadata.issueUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline cursor-pointer"
-          >
-            View in Jira →
-          </a>
-        </div>
-      )}
     </div>
   );
 } 

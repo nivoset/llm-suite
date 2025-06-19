@@ -23,6 +23,14 @@ export interface JiraDocument {
     issueType?: string;
     issueTypeIcon?: string;
     issueUrl: string;
+    epicKey?: string;
+    epicTitle?: string;
+    epicColor?: string;
+    childIssues?: Array<{
+      key: string;
+      title: string;
+      status: string;
+    }>;
     rawFields: Record<string, any>;
   };
 }
@@ -77,5 +85,39 @@ export interface JiraIssue {
     customfields?: {
       [key: string]: any;
     };
+    parent?: {
+      key: string;
+      fields: {
+        summary: string;
+        status: {
+          name: string;
+        };
+      };
+    };
+    issuelinks?: Array<{
+      type: {
+        name: string;
+        inward: string;
+        outward: string;
+      };
+      inwardIssue?: {
+        key: string;
+        fields: {
+          summary: string;
+          status: {
+            name: string;
+          };
+        };
+      };
+      outwardIssue?: {
+        key: string;
+        fields: {
+          summary: string;
+          status: {
+            name: string;
+          };
+        };
+      };
+    }>;
   };
 } 

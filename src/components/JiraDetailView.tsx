@@ -17,12 +17,11 @@ export function JiraDetailView({ issueKey }: JiraDetailViewProps) {
   const [activeTab, setActiveTab] = useQueryParameter('tab', 'chat');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
 
-  const { data: jiraCards, isLoading, error, refetch: refetchCard } = useQuery({
+  const { data: jiraCards, isLoading, refetch: refetchCard } = useQuery({
     queryKey: ['jira-cards', 'SCRUM'],
     queryFn: async () => {
       const docs = await loadJiraDocuments({ 
         projectKey: 'SCRUM',
-        searchQuery: `key = ${issueKey}`,
       });
       return docs;
     },
@@ -39,15 +38,30 @@ export function JiraDetailView({ issueKey }: JiraDetailViewProps) {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-[100dvh] dark:bg-gray-900">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900 dark:border-gray-100"></div>
+      </div>
+    );
+  }
+
   if (!jiraCard) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex items-center justify-center h-[100dvh] dark:bg-gray-900">
+        <div className="bg-red-50 dark:bg-red-900 text-red-800 dark:text-red-200 p-4 rounded-lg shadow">
+          <h3 className="text-lg font-semibold mb-2">Card Not Found</h3>
+          <p>Could not find card with key: {issueKey}</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="@container min-h-screen bg-white dark:bg-gray-900">
-      <div className="grid @[1000px]:grid-cols-2 grid-cols-1 h-full">
+    <div className="flex-1 container bg-white dark:bg-gray-900">
+      <div className="grid lg:grid-cols-2 grid-cols-1 h-[100dvh]">
         {/* Left panel - Jira details */}
-        <div className="p-6 @[1000px]:border-r border-b @[1000px]:border-b-0 border-gray-200 dark:border-gray-700">
+        <div className="p-6 lg:border-r border-b lg:border-b-0 border-gray-200 dark:border-gray-700 overflow-y-auto">
           <JiraCard 
             doc={jiraCard} 
             isDetailView 
@@ -57,7 +71,7 @@ export function JiraDetailView({ issueKey }: JiraDetailViewProps) {
         </div>
 
         {/* Right panel - Chat interface */}
-        <div className="flex flex-col">
+        <div className="flex flex-col h-[100dvh]">
           {/* Tabs */}
           <div className="flex border-b border-gray-200 dark:border-gray-700">
             <button
@@ -88,53 +102,96 @@ export function JiraDetailView({ issueKey }: JiraDetailViewProps) {
             </button>
           </div>
 
-          {/* Tab content */}
-          <div className="flex-1 overflow-auto">
+          {/* Tab panels */}
+          <div className="flex-1 overflow-hidden">
             {activeTab === 'chat' ? (
               <div id="chat-panel" role="tabpanel" aria-labelledby="chat-tab" className="h-full">
-                <ChatPanel 
-                  messages={messages} 
-                  onSendMessage={async (msg: string) => {
-                    setMessages([...messages, { role: 'user', content: msg, timestamp: new Date().toISOString() }]);
+                <ChatPanel
+                  messages={messages}
+                  onSendMessage={async (message) => {
+                    setMessages(prev => [...prev, { 
+                      role: 'user', 
+                      content: message, 
+                      timestamp: new Date().toISOString() 
+                    }]);
+                    // Add AI response simulation
+                    setTimeout(() => {
+                      setMessages(prev => [...prev, {
+                        role: 'assistant',
+                        content: 'This is a simulated response. The AI integration is coming soon!',
+                        timestamp: new Date().toISOString()
+                      }]);
+                    }, 1000);
                   }}
                   context={jiraCard}
                 />
               </div>
             ) : (
-              <div id="analysis-panel" role="tabpanel" aria-labelledby="analysis-tab" className="p-6">
+              <div id="analysis-panel" role="tabpanel" aria-labelledby="analysis-tab" className="p-6 overflow-y-auto h-full">
                 {isAnalysisLoading ? (
                   <div className="flex items-center justify-center h-full">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
                   </div>
                 ) : analysis ? (
-                  <div className="space-y-6">
+                  <div className="space-y-8">
+                    {/* Overview section combining key insights */}
                     <section>
-                      <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">Business Analysis</h2>
-                      <p className="text-gray-700 dark:text-gray-300">{analysis.businessAnalysis}</p>
+                      <h2 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-gray-100">Overview</h2>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg">
+                          <h3 className="text-lg font-medium mb-2 text-blue-700 dark:text-blue-300">Business Impact</h3>
+                          <p className="text-gray-700 dark:text-gray-300">{analysis.businessAnalysis}</p>
+                        </div>
+                        <div className="bg-purple-50 dark:bg-purple-900/30 p-4 rounded-lg">
+                          <h3 className="text-lg font-medium mb-2 text-purple-700 dark:text-purple-300">Architecture</h3>
+                          <p className="text-gray-700 dark:text-gray-300">{analysis.architecturalAnalysis}</p>
+                        </div>
+                        <div className="bg-green-50 dark:bg-green-900/30 p-4 rounded-lg">
+                          <h3 className="text-lg font-medium mb-2 text-green-700 dark:text-green-300">Implementation</h3>
+                          <p className="text-gray-700 dark:text-gray-300">{analysis.developmentAnalysis}</p>
+                        </div>
+                      </div>
                     </section>
+
+                    {/* Key Questions section */}
                     <section>
-                      <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">Architectural Analysis</h2>
-                      <p className="text-gray-700 dark:text-gray-300">{analysis.architecturalAnalysis}</p>
+                      <h2 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-gray-100">Key Questions</h2>
+                      <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg">
+                        <ul className="space-y-3">
+                          {analysis.questions.map((q, i) => {
+                            const [category] = q.match(/\[(.*?)\]/) || ['[Other]'];
+                            const question = q.replace(/\[(.*?)\]\s*/, '');
+                            return (
+                              <li key={i} className="flex items-start gap-3">
+                                <span className={`inline-block px-2 py-1 text-xs font-medium rounded ${
+                                  category.includes('Business') ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' :
+                                  category.includes('Technical') ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300' :
+                                  category.includes('Implementation') ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300' :
+                                  'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                                }`}>
+                                  {category.replace(/[\[\]]/g, '')}
+                                </span>
+                                <span className="text-gray-700 dark:text-gray-300">{question}</span>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
                     </section>
+
+                    {/* Recommendations section */}
                     <section>
-                      <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">Development Analysis</h2>
-                      <p className="text-gray-700 dark:text-gray-300">{analysis.developmentAnalysis}</p>
-                    </section>
-                    <section>
-                      <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">Key Questions</h2>
-                      <ul className="list-disc list-inside space-y-2 text-gray-700 dark:text-gray-300">
-                        {analysis.questions.map((q, i) => (
-                          <li key={i}>{q}</li>
-                        ))}
-                      </ul>
-                    </section>
-                    <section>
-                      <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">Recommendations</h2>
-                      <ul className="list-disc list-inside space-y-2 text-gray-700 dark:text-gray-300">
-                        {analysis.recommendations.map((r, i) => (
-                          <li key={i}>{r}</li>
-                        ))}
-                      </ul>
+                      <h2 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-gray-100">Recommendations</h2>
+                      <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg">
+                        <ul className="space-y-3">
+                          {analysis.recommendations.map((r, i) => (
+                            <li key={i} className="flex items-start gap-2">
+                              <span className="text-green-600 dark:text-green-400">•</span>
+                              <span className="text-gray-700 dark:text-gray-300">{r}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
                     </section>
                   </div>
                 ) : null}
