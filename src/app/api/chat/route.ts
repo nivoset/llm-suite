@@ -1,22 +1,11 @@
-import { chatWithHistory } from '~/llm/chat/chat';
+import { sendChatMessageAboudJiraIssue } from '~/llm/chat/chat';
 
 
 export async function POST(req: Request) {
-  const { messages, jiraCard } = await req.json();
+  const { message, jiraCard } = await req.json();
   const sessionId = jiraCard.metadata.key;
 
-  const stream = await chatWithHistory.stream(
-    {
-      ...jiraCard.metadata,
-      input: messages[messages.length - 1].content,
-    },
-    {
-      configurable: {
-        sessionId,
-      },
-    },
-  );
-
+  const stream = await sendChatMessageAboudJiraIssue(sessionId, jiraCard, message);
   return new Response(stream, {
     headers: { 'Content-Type': 'text/plain' },
   });

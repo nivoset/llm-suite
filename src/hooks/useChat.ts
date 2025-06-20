@@ -36,6 +36,7 @@ export const useChat = ({ initialMessages = [], body, onFinish }: UseChatOptions
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          message: content,
           messages: newMessages,
           ...body,
         }),
