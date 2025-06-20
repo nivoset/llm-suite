@@ -16,9 +16,11 @@ export function ThemeToggle() {
     setIsDark(newIsDark);
     if (newIsDark) {
       document.documentElement.classList.add('dark');
+      document.documentElement.classList.remove('light');
       localStorage.setItem('theme', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
+      document.documentElement.classList.add('light');
       localStorage.setItem('theme', 'light');
     }
   };

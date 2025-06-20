@@ -1,5 +1,3 @@
-'use server';
-
 import type { JiraConfig, CustomField, JiraFieldType } from './types';
 
 class JiraClient {
@@ -99,6 +97,13 @@ class JiraClient {
     });
   }
 
+  async createIssue(fields: Record<string, any>): Promise<any> {
+    return this.fetch('/issue', {
+      method: 'POST',
+      body: JSON.stringify({ fields }),
+    });
+  }
+
   private mapJiraTypeToFieldType(jiraType: string): JiraFieldType {
     const typeMap: Record<string, JiraFieldType> = {
       'string': 'string',
@@ -161,4 +166,9 @@ export async function transitionIssue(issueKey: string, transitionId: string, fi
 export async function addAttachment(issueKey: string, file: File) {
   const client = await getJiraClient();
   return client.addAttachment(issueKey, file);
+}
+
+export async function createIssue(fields: Record<string, any>) {
+  const client = await getJiraClient();
+  return client.createIssue(fields);
 } 

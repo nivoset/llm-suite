@@ -1,7 +1,6 @@
 'use server';
 
 import { SystemMessage, HumanMessage } from '@langchain/core/messages';
-import { PromptTemplate } from '@langchain/core/prompts';
 import { model } from '../model';
 import { updateIssue, addComment } from './client';
 import type { JiraDocument } from '~/types/jira';
