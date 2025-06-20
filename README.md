@@ -34,3 +34,13 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Future Enhancements
+
+### Chat Message Formatting
+
+To improve the readability of chat messages, we should investigate using a library to render message content as Markdown. This would allow for better formatting of lists, code blocks, and other text styles.
+
+Potential libraries to consider:
+- **[react-markdown](https://www.npmjs.com/package/react-markdown)**: A very popular, secure, and feature-rich option. It uses `remark` and `rehype` plugins, including `remark-gfm` for GitHub Flavored Markdown support.
+- **[markdown-to-jsx](https://www.npmjs.com/package/markdown-to-jsx)**: A lightweight alternative that boasts a smaller bundle size, which could be beneficial for performance.

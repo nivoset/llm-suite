@@ -106,7 +106,10 @@ export function JiraCard({ doc, isDetailView = false, onRefresh, isRefreshing = 
       )}
 
       {/* Main content */}
-      <div className="p-4">
+      <div className={`p-4 relative ${isDetailView ? '' : 'max-h-96 overflow-y-auto'}`}>
+        {!isDetailView && (
+          <div className="absolute bottom-0 left-0 w-full h-16 bg-gradient-to-t from-white dark:from-slate-800 to-transparent pointer-events-none"></div>
+        )}
         <h2 className="text-lg font-semibold mb-3 text-slate-900 dark:text-slate-100">
           {doc.metadata.title}
         </h2>

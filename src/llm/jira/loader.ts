@@ -63,7 +63,6 @@ export class CustomJiraLoader extends JiraProjectLoader {
     console.log('CustomJiraLoader: Starting to load issues...');
     try {
       const issues = await this.loadAsIssues();
-      console.log('CustomJiraLoader: Raw issues loaded:', issues);
 
       if (!Array.isArray(issues)) {
         console.error('CustomJiraLoader: Expected array of issues but got:', typeof issues);

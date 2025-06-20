@@ -1,16 +1,20 @@
 'use client';
 
-import { useChat } from 'ai/react';
 import { ChatPanel } from './ChatPanel';
 import type { JiraDocument } from '~/types/jira';
+import { useChat } from '~/hooks/useChat';
 
 interface JiraChatPanelProps {
   jiraCard: JiraDocument;
 }
 
+const STARTER_PROMPTS = [
+  'Summarize this issue for me.',
+  'What is the current status and priority?',
+];
+
 export function JiraChatPanel({ jiraCard }: JiraChatPanelProps) {
-  const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
-    api: '/api/chat',
+  const { messages, input, handleInputChange, handleSubmit, isLoading, sendMessage } = useChat({
     body: {
       jiraCard,
     },
@@ -25,6 +29,8 @@ export function JiraChatPanel({ jiraCard }: JiraChatPanelProps) {
         onSubmit={handleSubmit}
         context={jiraCard}
         isLoading={isLoading}
+        starterPrompts={STARTER_PROMPTS}
+        onStarterClick={sendMessage}
       />
     </div>
   );

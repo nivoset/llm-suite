@@ -104,6 +104,16 @@ class JiraClient {
     });
   }
 
+  async getProjects(): Promise<any[]> {
+    return this.fetch('/project');
+  }
+
+  async getEpics(projectKey: string): Promise<any[]> {
+    const jql = `project = "${projectKey}" AND issuetype = Epic`;
+    const response = await this.fetch<any>(`/search?jql=${encodeURIComponent(jql)}&fields=summary,status,issuetype,assignee,priority`);
+    return response.issues;
+  }
+
   private mapJiraTypeToFieldType(jiraType: string): JiraFieldType {
     const typeMap: Record<string, JiraFieldType> = {
       'string': 'string',
@@ -171,4 +181,14 @@ export async function addAttachment(issueKey: string, file: File) {
 export async function createIssue(fields: Record<string, any>) {
   const client = await getJiraClient();
   return client.createIssue(fields);
+}
+
+export async function getProjects() {
+  const client = await getJiraClient();
+  return client.getProjects();
+}
+
+export async function getEpics(projectKey: string) {
+  const client = await getJiraClient();
+  return client.getEpics(projectKey);
 } 

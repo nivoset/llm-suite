@@ -2,7 +2,7 @@
 
 import { useRef, useEffect } from 'react';
 import type { JiraDocument } from '~/types/jira';
-import type { Message } from 'ai/react';
+import type { Message } from '~/types/chat';
 
 interface ChatPanelProps {
   messages: Message[];
@@ -11,9 +11,19 @@ interface ChatPanelProps {
   onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
   context: JiraDocument;
   isLoading?: boolean;
+  starterPrompts?: string[];
+  onStarterClick?: (prompt: string) => void;
 }
 
-export function ChatPanel({ messages, input, onInputChange, onSubmit, isLoading }: ChatPanelProps) {
+export function ChatPanel({
+  messages,
+  input,
+  onInputChange,
+  onSubmit,
+  isLoading,
+  starterPrompts = [],
+  onStarterClick,
+}: ChatPanelProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -27,6 +37,24 @@ export function ChatPanel({ messages, input, onInputChange, onSubmit, isLoading 
   return (
     <div className="flex flex-col h-full">
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {messages.length === 0 && starterPrompts.length > 0 && (
+          <div className="flex flex-col items-center justify-center h-full">
+            <div className="text-2xl font-semibold text-slate-500 dark:text-slate-400 mb-4">
+              Ask about this issue
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {starterPrompts.map((prompt, i) => (
+                <button
+                  key={i}
+                  className="p-4 border rounded-lg text-left bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/50 dark:hover:bg-slate-800/80 text-slate-900 dark:text-slate-100 transition-colors cursor-pointer"
+                  onClick={() => onStarterClick?.(prompt)}
+                >
+                  {prompt}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         {messages.map((m, i) => (
           <div
             key={i}
@@ -43,6 +71,17 @@ export function ChatPanel({ messages, input, onInputChange, onSubmit, isLoading 
             </div>
           </div>
         ))}
+        {isLoading && (
+          <div className="flex justify-start">
+            <div className="max-w-lg rounded-lg px-4 py-2 border border-slate-200 dark:border-transparent bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-slate-500 rounded-full animate-pulse"></div>
+                <div className="w-2 h-2 bg-slate-500 rounded-full animate-pulse delay-75"></div>
+                <div className="w-2 h-2 bg-slate-500 rounded-full animate-pulse delay-150"></div>
+              </div>
+            </div>
+          </div>
+        )}
         <div ref={messagesEndRef} />
       </div>
 
