@@ -106,7 +106,10 @@ export function JiraDetailView({ issueKey }: JiraDetailViewProps) {
           <div className="flex-1 overflow-hidden">
             {activeTab === 'chat' ? (
               <div id="chat-panel" role="tabpanel" aria-labelledby="chat-tab" className="h-full">
-                <JiraChatPanel jiraCard={jiraCard} />
+                <JiraChatPanel 
+                  jiraCard={jiraCard} 
+                  onSuggestUpdate={(newContent) => (jiraCard as any).onSuggestUpdate(newContent)} 
+                />
               </div>
             ) : (
               <div id="analysis-panel" role="tabpanel" aria-labelledby="analysis-tab" className="h-full">

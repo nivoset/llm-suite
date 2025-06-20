@@ -7,6 +7,7 @@ import type { StarterPrompt } from '~/types/chat';
 
 interface JiraChatPanelProps {
   jiraCard: JiraDocument;
+  onSuggestUpdate: (newContent: string) => void;
 }
 
 const STARTER_PROMPTS: StarterPrompt[] = [
@@ -28,11 +29,21 @@ const STARTER_PROMPTS: StarterPrompt[] = [
   },
 ];
 
-export function JiraChatPanel({ jiraCard }: JiraChatPanelProps) {
+export function JiraChatPanel({ jiraCard, onSuggestUpdate }: JiraChatPanelProps) {
   const { messages, input, handleInputChange, handleSubmit, isLoading, sendMessage } = useChat({
     body: {
       jiraCard,
     },
+    onToolEnd: (output) => {
+      try {
+        const parsed = JSON.parse(output);
+        if (parsed.suggestedContent) {
+          onSuggestUpdate(parsed.suggestedContent);
+        }
+      } catch (e) {
+        // Not a JSON object, ignore.
+      }
+    }
   });
 
   return (

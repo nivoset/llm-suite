@@ -7,9 +7,10 @@ type UseChatOptions = {
   initialMessages?: Message[];
   body?: Record<string, unknown>;
   onFinish?: (message: Message) => void;
+  onToolEnd?: (output: string) => void;
 };
 
-export const useChat = ({ initialMessages = [], body, onFinish }: UseChatOptions = {}) => {
+export const useChat = ({ initialMessages = [], body, onFinish, onToolEnd }: UseChatOptions = {}) => {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -85,6 +86,15 @@ export const useChat = ({ initialMessages = [], body, onFinish }: UseChatOptions
       if (onFinish) {
         onFinish(finalAssistantMessage);
       }
+      
+      // Check if the final response is from a tool and call the callback
+      if (onToolEnd && finalAssistantMessage.role === 'assistant') {
+        // A simple check to see if the content is likely a JSON object from our tool
+        if (assistantResponse.trim().startsWith('{') && assistantResponse.trim().endsWith('}')) {
+          onToolEnd(assistantResponse);
+        }
+      }
+
     } catch (error) {
       console.error('Error fetching chat response:', error);
       const errorMessage: Message = {

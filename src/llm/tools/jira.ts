@@ -41,15 +41,15 @@ export const addJiraCommentTool = new DynamicStructuredTool({
 });
 
 export const updateJiraIssueTool = new DynamicStructuredTool({
-  name: 'update_jira_issue',
-  description: 'Updates one or more fields of a specific Jira issue. Do not use for adding comments.',
+  name: 'update_jira_issue_fields',
+  description: 'Updates specific fields of a Jira issue, such as summary, priority, or assignee. Do NOT use this to update the main description or to add comments.',
   schema: z.object({
     issueKey: z.string().describe("The key of the Jira issue (e.g., 'PROJ-123')."),
     fields: z.record(z.any()).describe('An object containing the fields to update (e.g., {"summary": "New summary", "priority": {"name": "High"}}).'),
   }),
   func: async ({ issueKey, fields }) => {
     try {
-      await updateIssue(issueKey, fields);
+      await updateIssue(issueKey, { fields });
       return `Successfully updated issue ${issueKey}.`;
     } catch (error: any) {
       return `Failed to update issue ${issueKey}: ${error.message}`;
@@ -57,4 +57,20 @@ export const updateJiraIssueTool = new DynamicStructuredTool({
   },
 });
 
-export const jiraTools = [getJiraIssueCommentsTool, addJiraCommentTool, updateJiraIssueTool];
+export const updateJiraIssueContentTool = new DynamicStructuredTool({
+  name: 'update_jira_issue_content',
+  description: "Use this tool to suggest a replacement for the main content or description of a Jira issue. The entire description will be overwritten with the new content. The user will be asked to confirm the change.",
+  schema: z.object({
+    issueKey: z.string().describe("The key of the Jira issue (e.g., 'PROJ-123')."),
+    newContent: z.string().describe("The full, new content for the issue's description.")
+  }),
+  func: async ({ newContent }) => {
+    // Instead of updating, we now return a structured message
+    // that the client-side code will use to trigger the UI update.
+    return JSON.stringify({
+      suggestedContent: newContent
+    });
+  }
+});
+
+export const jiraTools = [getJiraIssueCommentsTool, addJiraCommentTool, updateJiraIssueTool, updateJiraIssueContentTool];

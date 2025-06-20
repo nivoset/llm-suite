@@ -4,13 +4,15 @@ import Image from 'next/image';
 import Link from 'next/link';
 import type { JiraDocument } from '~/types/jira';
 import { ArrowPathIcon } from '@heroicons/react/24/outline';
-import { createElement } from 'react';
+import { createElement, useState, useEffect } from 'react';
+import { updateIssue } from '~/llm/jira/client';
 
 interface JiraCardProps {
   doc: JiraDocument;
   isDetailView?: boolean;
   onRefresh?: () => void;
   isRefreshing?: boolean;
+  onSuggestUpdate?: (newContent: string) => void;
 }
 
 function renderAdfContent(content: any) {
@@ -39,11 +41,48 @@ function renderAdfContent(content: any) {
 }
 
 export function JiraCard({ doc, isDetailView = false, onRefresh, isRefreshing = false }: JiraCardProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editableContent, setEditableContent] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    // Initialize editable content when the component mounts or the doc changes
+    setEditableContent(doc.metadata.description || '');
+  }, [doc.metadata.description]);
+
   const handleRefreshClick = () => {
     if (onRefresh) {
       onRefresh();
     }
   };
+
+  const handleSaveClick = async () => {
+    setIsSaving(true);
+    try {
+      await updateIssue(doc.metadata.key, { description: editableContent });
+      setIsEditing(false);
+      onRefresh?.();
+    } catch (error) {
+      console.error('Failed to save issue:', error);
+      // Handle error display to user
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // This function will be called from the parent to initiate editing
+  const handleSuggestUpdate = (newContent: string) => {
+    setEditableContent(newContent);
+    setIsEditing(true);
+  };
+  
+  // A bit of a hack to expose the function to the parent.
+  // In a real app, you might use forwardRef or a more robust state management solution.
+  useEffect(() => {
+    if (isDetailView && (doc as any).onSuggestUpdate !== handleSuggestUpdate) {
+      (doc as any).onSuggestUpdate = handleSuggestUpdate;
+    }
+  }, [doc, isDetailView, handleSuggestUpdate]);
 
   return (
     <div className={`bg-white dark:bg-slate-800 rounded-lg shadow-md overflow-hidden border border-slate-200 dark:border-transparent ${isDetailView ? '' : 'hover:shadow-lg transition-shadow'}`}>
@@ -114,10 +153,35 @@ export function JiraCard({ doc, isDetailView = false, onRefresh, isRefreshing = 
           {doc.metadata.title}
         </h2>
         
-        {doc.metadata.description && (
-          <div className="prose dark:text-slate-300 max-w-none mb-4">
-            {renderAdfContent(doc.metadata.description)}
+        {isEditing ? (
+          <div className="mb-4">
+            <textarea
+              className="w-full h-64 p-2 border rounded-md dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600"
+              value={editableContent}
+              onChange={(e) => setEditableContent(e.target.value)}
+            />
+            <div className="mt-2 flex gap-2">
+              <button 
+                onClick={handleSaveClick}
+                disabled={isSaving}
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-slate-400"
+              >
+                {isSaving ? 'Saving...' : 'Save'}
+              </button>
+              <button 
+                onClick={() => setIsEditing(false)}
+                className="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-600 rounded-md hover:bg-slate-200 dark:hover:bg-slate-500"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
+        ) : (
+          doc.metadata.description && (
+            <div className="prose dark:text-slate-300 max-w-none mb-4">
+              {renderAdfContent(doc.metadata.description)}
+            </div>
+          )
         )}
 
         {/* Child issues if this is an epic */}
