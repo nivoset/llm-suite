@@ -32,6 +32,10 @@ const analysisSchema = z.object({
   risks: z.array(z.string()).describe("List of potential risks or concerns"),
 });
 
+const questionsSchema = z.object({
+  questions: z.array(z.string()).describe("An array of 5-7 key questions that need to be answered, ordered by priority. Each question should be prefixed with its primary category: [Business], [Technical], or [Implementation].")
+});
+
 // Define the state interface
 interface AnalysisState {
   issue: JiraDocument;
@@ -41,6 +45,7 @@ interface AnalysisState {
   developmentAnalysis: string;
   recommendations: string[];
   questions: string[];
+  summary?: string;
 }
 
 // Define expert nodes
@@ -162,8 +167,44 @@ Development Analysis:
 {developmentAnalysis}
 
 List the top 5-7 most important questions that need to be clarified, ordered by priority.
-Format as a JSON array of strings.
 Each question should be prefixed with its primary category: [Business], [Technical], or [Implementation].
+`);
+
+  const response = await prompt
+    .pipe(model.withStructuredOutput(questionsSchema))
+    .invoke({
+      businessAnalysis: state.businessAnalysis,
+      architecturalAnalysis: state.architecturalAnalysis,
+      developmentAnalysis: state.developmentAnalysis,
+    });
+
+  return {
+    questions: response.questions,
+  };
+}
+
+async function summaryNode(state: AnalysisState) {
+  const prompt = PromptTemplate.fromTemplate(`
+You are a senior technical product manager tasked with synthesizing analysis from different perspectives into a clear, actionable overview.
+
+Given the following detailed analyses, create a concise executive summary that:
+1. Highlights the most important insights across all perspectives
+2. Identifies key dependencies and relationships
+3. Outlines critical success factors
+4. Flags major risks or challenges
+5. Provides a high-level recommendation
+
+Business Analysis:
+{businessAnalysis}
+
+Architectural Analysis:
+{architecturalAnalysis}
+
+Development Analysis:
+{developmentAnalysis}
+
+Format your response as a concise but comprehensive overview that a stakeholder could quickly read to understand the full scope and implications of this issue.
+Focus on synthesizing insights rather than repeating individual points.
 `);
 
   const response = await prompt
@@ -175,7 +216,7 @@ Each question should be prefixed with its primary category: [Business], [Technic
     });
 
   return {
-    questions: JSON.parse(response.content.toString()),
+    summary: response.content.toString(),
   };
 }
 
@@ -190,7 +231,7 @@ export interface AnalysisResponse {
   risks: string[];
 }
 
-export type AnalysisResult = Pick<AnalysisState, 'businessAnalysis' | 'architecturalAnalysis' | 'developmentAnalysis' | 'questions' | 'recommendations'>;
+export type AnalysisResult = Pick<AnalysisState, 'businessAnalysis' | 'architecturalAnalysis' | 'developmentAnalysis' | 'questions' | 'recommendations' | 'summary'>;
 
 export async function analyzeJiraEpic(doc: JiraDocument): Promise<AnalysisResult> {
   // Initialize state
@@ -225,12 +266,17 @@ export async function analyzeJiraEpic(doc: JiraDocument): Promise<AnalysisResult
   const questionResult = await questionExtractorNode(state);
   state.questions = questionResult.questions;
 
+  // Generate summary
+  const summaryResult = await summaryNode(state);
+  state.summary = summaryResult.summary;
+
   return {
     businessAnalysis: state.businessAnalysis,
     architecturalAnalysis: state.architecturalAnalysis,
     developmentAnalysis: state.developmentAnalysis,
     questions: state.questions,
     recommendations: state.recommendations,
+    summary: state.summary,
   };
 }
 

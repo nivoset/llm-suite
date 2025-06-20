@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { ChatPanel, type ChatMessage } from './ChatPanel';
+import { useChat } from 'ai/react';
+import { ChatPanel } from './ChatPanel';
 import type { JiraDocument } from '~/types/jira';
 
 interface JiraChatPanelProps {
@@ -9,30 +9,22 @@ interface JiraChatPanelProps {
 }
 
 export function JiraChatPanel({ jiraCard }: JiraChatPanelProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-
-  const handleSendMessage = async (message: string) => {
-    setMessages(prev => [...prev, { 
-      role: 'user', 
-      content: message, 
-      timestamp: new Date().toISOString() 
-    }]);
-    // Add AI response simulation
-    setTimeout(() => {
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: 'This is a simulated response. The AI integration is coming soon!',
-        timestamp: new Date().toISOString()
-      }]);
-    }, 1000);
-  };
+  const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
+    api: '/api/chat',
+    body: {
+      jiraCard,
+    },
+  });
 
   return (
     <div className="h-full">
       <ChatPanel
         messages={messages}
-        onSendMessage={handleSendMessage}
+        input={input}
+        onInputChange={handleInputChange}
+        onSubmit={handleSubmit}
         context={jiraCard}
+        isLoading={isLoading}
       />
     </div>
   );

@@ -13,99 +13,29 @@ interface JiraCardProps {
   isRefreshing?: boolean;
 }
 
-function renderAdfContent(content: string) {
-  try {
-    // If the content is already in ADF format (JSON string), parse it
-    const adfDoc = typeof content === 'string' ? JSON.parse(content) : content;
-    
-    if (adfDoc.type === 'doc') {
-      return renderAdfNode(adfDoc);
-    }
-    
-    // Fallback to plain text if not valid ADF
-    return <p className="whitespace-pre-wrap">{content}</p>;
-  } catch (e) {
-    // If parsing fails, treat as plain text
+function renderAdfContent(content: any) {
+  if (typeof content === 'string') {
     return <p className="whitespace-pre-wrap">{content}</p>;
   }
-}
 
-function renderAdfNode(node: any): React.ReactNode {
-  if (!node) return null;
-
-  switch (node.type) {
-    case 'doc':
-      return <div>{node.content?.map((child: any, i: number) => renderAdfNode(child))}</div>;
-    
-    case 'paragraph':
-      return <p className="mb-2">{node.content?.map((child: any, i: number) => renderAdfNode(child))}</p>;
-    
-    case 'text':
-      let content = node.text;
-      if (node.marks) {
-        node.marks.forEach((mark: any) => {
-          switch (mark.type) {
-            case 'strong':
-              content = <strong>{content}</strong>;
-              break;
-            case 'em':
-              content = <em>{content}</em>;
-              break;
-            case 'strike':
-              content = <del>{content}</del>;
-              break;
-            case 'code':
-              content = <code className="px-1 py-0.5 bg-gray-100 dark:bg-gray-800 rounded">{content}</code>;
-              break;
-            case 'link':
-              content = <a href={mark.attrs.href} className="text-blue-600 dark:text-blue-400 hover:underline" target="_blank" rel="noopener noreferrer">{content}</a>;
-              break;
+  if (content && content.type === 'doc' && Array.isArray(content.content)) {
+    // This is a simplified renderer. It will just extract text.
+    const textContent = content.content.map((block: any) => {
+      if (block.type === 'paragraph' && Array.isArray(block.content)) {
+        return block.content.map((inline: any) => {
+          if (inline.type === 'text') {
+            return inline.text;
           }
-        });
+          return '';
+        }).join('');
       }
-      return content;
-    
-    case 'bulletList':
-      return <ul className="list-disc list-inside mb-2">{node.content?.map((child: any, i: number) => renderAdfNode(child))}</ul>;
-    
-    case 'orderedList':
-      return <ol className="list-decimal list-inside mb-2">{node.content?.map((child: any, i: number) => renderAdfNode(child))}</ol>;
-    
-    case 'listItem':
-      return <li className="ml-4">{node.content?.map((child: any, i: number) => renderAdfNode(child))}</li>;
-    
-    case 'heading':
-      const level = Math.min(Math.max(node.attrs?.level || 1, 1), 6);
-      return createElement(
-        `h${level}`,
-        { className: "font-bold mb-2 mt-4" },
-        node.content?.map((child: any, i: number) => renderAdfNode(child))
-      );
-    
-    case 'codeBlock':
-      return (
-        <pre className="bg-gray-100 dark:bg-gray-800 p-4 rounded mb-2 overflow-x-auto">
-          <code>{node.content?.map((child: any, i: number) => renderAdfNode(child))}</code>
-        </pre>
-      );
-    
-    case 'blockquote':
-      return (
-        <blockquote className="border-l-4 border-gray-300 dark:border-gray-600 pl-4 mb-2 italic">
-          {node.content?.map((child: any, i: number) => renderAdfNode(child))}
-        </blockquote>
-      );
-    
-    case 'rule':
-      return <hr className="my-4 border-gray-200 dark:border-gray-700" />;
-    
-    case 'hardBreak':
-      return <br />;
-    
-    default:
-      // For unsupported node types, try to render children if they exist
-      return node.content ? node.content.map((child: any, i: number) => renderAdfNode(child)) : null;
+      return '';
+    }).join('\\n');
+    return <p className="whitespace-pre-wrap">{textContent}</p>;
   }
+
+  // Fallback for unknown format
+  return <p className="whitespace-pre-wrap">Unsupported description format</p>;
 }
 
 export function JiraCard({ doc, isDetailView = false, onRefresh, isRefreshing = false }: JiraCardProps) {

@@ -1,7 +1,10 @@
 # Internal Systems Context
 
-## ServiceNow RSAM (Risk and Security Assessment Management)
+## spring initializr
+we have an in house version of this at http://go/kickstarter we should use, it has default for things like logging and core library selection
 
+## ServiceNow RSAM (Risk and Security Assessment Management)
+ this is needed for updating production data in many instances as well as deployments
 ### Authentication
 - Access requires valid ServiceNow instance credentials
 - Use OAuth2 flow for secure authentication

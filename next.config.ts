@@ -8,6 +8,11 @@ const config: NextConfig = {
         hostname: '*.atlassian.net',  // This will allow all Atlassian subdomains
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'secure.gravatar.com',
+        pathname: '/**',
+      },
     ],
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",

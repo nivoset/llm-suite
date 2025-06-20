@@ -3,6 +3,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { loadJiraDocuments } from '~/llm/jira';
 import { JiraCard } from './JiraCard';
+import Link from 'next/link';
+import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { useQueryParameter } from '~/hooks/useQueryParameter';
 import { JiraChatPanel } from './JiraChatPanel';
 import { JiraAnalysisPanel } from './JiraAnalysisPanel';
@@ -55,6 +57,12 @@ export function JiraDetailView({ issueKey }: JiraDetailViewProps) {
       <div className="grid lg:grid-cols-2 grid-cols-1 h-[100dvh]">
         {/* Left panel - Jira details */}
         <div className="p-6 lg:border-r border-b lg:border-b-0 border-gray-200 dark:border-gray-700 overflow-y-auto">
+          <div className="mb-4">
+            <Link href="/" className="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:underline">
+              <ArrowLeftIcon className="h-4 w-4" />
+              <span>Back to List</span>
+            </Link>
+          </div>
           <JiraCard 
             doc={jiraCard} 
             isDetailView 
@@ -103,7 +111,7 @@ export function JiraDetailView({ issueKey }: JiraDetailViewProps) {
               </div>
             ) : (
               <div id="analysis-panel" role="tabpanel" aria-labelledby="analysis-tab" className="h-full">
-                <JiraAnalysisPanel jiraCard={jiraCard} />
+                <JiraAnalysisPanel jiraCard={jiraCard} onRefresh={handleRefresh} />
               </div>
             )}
           </div>
