@@ -2,7 +2,7 @@
 
 import { useRef, useEffect } from 'react';
 import type { JiraDocument } from '~/types/jira';
-import type { Message } from '~/types/chat';
+import type { Message, StarterPrompt } from '~/types/chat';
 
 interface ChatPanelProps {
   messages: Message[];
@@ -11,7 +11,7 @@ interface ChatPanelProps {
   onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
   context: JiraDocument;
   isLoading?: boolean;
-  starterPrompts?: string[];
+  starterPrompts?: StarterPrompt[];
   onStarterClick?: (prompt: string) => void;
 }
 
@@ -25,6 +25,7 @@ export function ChatPanel({
   onStarterClick,
 }: ChatPanelProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -33,6 +34,12 @@ export function ChatPanel({
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  useEffect(() => {
+    if (!isLoading) {
+      inputRef.current?.focus();
+    }
+  }, [isLoading]);
 
   return (
     <div className="flex flex-col h-full">
@@ -46,10 +53,10 @@ export function ChatPanel({
               {starterPrompts.map((prompt, i) => (
                 <button
                   key={i}
-                  className="p-4 border rounded-lg text-left bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/50 dark:hover:bg-slate-800/80 text-slate-900 dark:text-slate-100 transition-colors cursor-pointer"
-                  onClick={() => onStarterClick?.(prompt)}
+                  className="p-4 border rounded-lg text-left bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/50 dark:hover:bg-slate-800/80 text-slate-900 dark:text-slate-100 transition-colors"
+                  onClick={() => onStarterClick?.(prompt.message)}
                 >
-                  {prompt}
+                  {prompt.display}
                 </button>
               ))}
             </div>
@@ -88,6 +95,7 @@ export function ChatPanel({
       <div className="border-t border-slate-200 dark:border-slate-700 p-4">
         <form onSubmit={onSubmit} className="flex items-center space-x-2">
           <input
+            ref={inputRef}
             type="text"
             value={input}
             onChange={onInputChange}
