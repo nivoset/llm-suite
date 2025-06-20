@@ -112,7 +112,7 @@ export function JiraCard({ doc, isDetailView = false, onRefresh, isRefreshing = 
         </h2>
         
         {doc.metadata.description && (
-          <div className="prose dark:prose-invert max-w-none mb-4">
+          <div className="prose dark:text-slate-300 max-w-none mb-4">
             {renderAdfContent(doc.metadata.description)}
           </div>
         )}

@@ -22,6 +22,11 @@ const PERSONAS = {
     role: "Senior Developer",
     expertise: "Code quality, implementation patterns, technical debt",
     focus: "Code structure, performance, testing, maintainability"
+  },
+  QA_ENGINEER: {
+    role: "QA Engineer",
+    expertise: "Test planning, test automation, acceptance criteria",
+    focus: "Testability, user acceptance testing, regression risks"
   }
 } as const;
 
@@ -32,8 +37,17 @@ const analysisSchema = z.object({
   risks: z.array(z.string()).describe("List of potential risks or concerns"),
 });
 
+const qaAnalysisSchema = z.object({
+  analysis: z.string().describe("Detailed analysis from the QA perspective, focusing on testability and risks."),
+  acceptanceCriteria: z.array(z.string()).describe("List of specific, verifiable acceptance criteria for the issue."),
+  testPlan: z.string().describe("A high-level test plan outlining the testing strategy."),
+});
+
 const questionsSchema = z.object({
-  questions: z.array(z.string()).describe("An array of 5-7 key questions that need to be answered, ordered by priority. Each question should be prefixed with its primary category: [Business], [Technical], or [Implementation].")
+  questions: z.array(z.object({
+    type: z.string().describe("The primary category of the question. Must be one of: Business, Technical, Implementation."),
+    question: z.string().describe("The key question that needs to be answered.")
+  })).describe("An array of 5-7 key questions that need to be answered, ordered by priority.")
 });
 
 // Define the state interface
@@ -43,30 +57,55 @@ interface AnalysisState {
   businessAnalysis: string;
   architecturalAnalysis: string;
   developmentAnalysis: string;
+  qaAnalysis: string;
   recommendations: string[];
-  questions: string[];
+  questions: { type: string; question: string }[];
   summary?: string;
 }
 
 // Define expert nodes
 async function businessAnalystNode(state: AnalysisState) {
-  const systemPrompt = new SystemMessage(`You are an experienced Business Analyst with expertise in:
-- Requirements analysis
-- Business process optimization
-- Stakeholder management
-- Cost-benefit analysis
-- Risk assessment
+  const systemPrompt = new SystemMessage(`You are an experienced Business Analyst with deep expertise in:
 
-Analyze the Jira issue from a business perspective, focusing on:
-1. Business value and impact
-2. Stakeholder concerns
-3. Process improvements
-4. Potential risks
-5. Success metrics
+Requirements gathering and analysis
 
-Your analysis should be concise and avoid duplicating technical or implementation details that would be better covered by the architect or developer perspectives.
+Business process optimization
 
-Context from internal systems:
+Stakeholder alignment and communication
+
+Cost-benefit analysis
+
+Risk identification from a business perspective
+
+Analyze the following Jira issue strictly from a business perspective — avoid technical or implementation-level details that fall under architecture or development.
+
+Your analysis should address:
+
+Business Value & Impact:
+
+What tangible value does this issue deliver (e.g., revenue, efficiency, compliance, user satisfaction)?
+
+How does it align with business goals or strategic priorities?
+
+Stakeholder Concerns:
+
+Identify any known or anticipated stakeholder questions, objections, or interests.
+
+Process Improvements:
+
+What business processes are affected?
+
+Will this change improve efficiency, reduce redundancy, or enhance customer experience?
+
+Potential Business Risks:
+
+What are the business-related risks (e.g., operational, reputational, financial)?
+
+Success Metrics:
+
+Define measurable indicators for business success (e.g., KPI improvements, cost savings, adoption rate).
+
+Input:
 ${state.context}
 `);
 
@@ -84,22 +123,54 @@ Components: ${state.issue.metadata.components?.join(', ') || 'None'}`);
 }
 
 async function architectNode(state: AnalysisState) {
-  const systemPrompt = new SystemMessage(`You are a seasoned Software Architect with expertise in:
-- System design
-- Technical debt management
-- Scalability planning
-- Integration patterns
-- Security architecture
+  const systemPrompt = new SystemMessage(`You are a seasoned Software Architect with deep expertise in:
 
-Analyze the Jira issue from an architectural perspective, focusing on:
-1. Technical approach and system design
-2. Integration and dependencies
-3. Scalability and performance considerations
-4. Security implications
-5. Technical risks
+System design and architecture
 
-Focus on high-level technical decisions and architectural impacts. Avoid duplicating business context or low-level implementation details.
+Managing technical debt and long-term maintainability
 
+Designing for scalability and performance
+
+Defining integration strategies across services and platforms
+
+Security best practices at the architectural level
+
+Analyze the following Jira issue from a high-level architectural perspective.
+Avoid business justification or low-level implementation details — focus instead on systemic impacts, architectural strategy, and long-term viability.
+
+Your analysis should cover:
+
+System Design & Technical Approach:
+
+What is the recommended architectural approach?
+
+Does this change align with existing architectural patterns and principles?
+
+Integration & Dependencies:
+
+What systems, services, or APIs are impacted or must be integrated?
+
+Are there potential points of failure or tight coupling introduced?
+
+Scalability & Performance:
+
+Will this change scale with expected usage?
+
+Are there any potential performance bottlenecks or optimization opportunities?
+
+Security Architecture:
+
+What security concerns arise at the architectural level?
+
+Are there any data exposure, access control, or compliance implications?
+
+Technical Risks:
+
+What are the primary risks from a system design perspective?
+
+How might this increase technical debt or reduce flexibility?
+
+Input:
 Context from internal systems:
 ${state.context}
 `);
@@ -118,23 +189,58 @@ Components: ${state.issue.metadata.components?.join(', ') || 'None'}`);
 }
 
 async function developerNode(state: AnalysisState) {
-  const systemPrompt = new SystemMessage(`You are a Senior Developer with expertise in:
-- Code quality
-- Implementation complexity
-- Testing requirements
-- Performance optimization
-- Maintainability
+  const systemPrompt = new SystemMessage(`You are a Senior Developer with deep expertise in:
 
-Analyze the Jira issue from a development perspective, focusing on:
-1. Implementation approach and complexity
-2. Testing strategy and requirements
-3. Code maintainability considerations
-4. Development risks and challenges
-5. Technical dependencies
+Writing high-quality, maintainable code
 
-Focus on concrete implementation details and development concerns. Avoid duplicating high-level architectural decisions or business context.
+Estimating and managing implementation complexity
 
-Context from internal systems:
+Defining effective testing strategies
+
+Optimizing performance at the code and system level
+
+Managing technical dependencies and reducing fragility
+
+Analyze the following Jira issue from a development perspective.
+Your focus should be on practical, code-level considerations that affect implementation, testing, and long-term maintainability.
+Do not repeat architectural strategy or business rationale — stay within the scope of hands-on development work.
+
+Your analysis should include:
+
+Implementation Approach & Complexity:
+
+What is the recommended implementation path?
+
+Are there areas of high complexity or ambiguity?
+
+Estimate development effort and any key refactors needed.
+
+Testing Strategy & Requirements:
+
+What types of testing are required (unit, integration, mocking, etc.)?
+
+What edge cases or failure modes need special attention?
+
+Code Maintainability:
+
+How will this impact readability, extensibility, and long-term upkeep?
+
+Are there opportunities to improve modularity or reduce duplication?
+
+Development Risks & Challenges:
+
+What could go wrong during implementation?
+
+Are there blockers, unclear specs, or risky dependencies?
+
+Technical Dependencies:
+
+Identify external systems, libraries, or internal modules that this work relies on.
+
+Note any versioning, compatibility, or stability concerns.
+
+Input:
+Context from internal systems: 
 ${state.context}
 `);
 
@@ -151,11 +257,102 @@ Components: ${state.issue.metadata.components?.join(', ') || 'None'}`);
   };
 }
 
+async function qaEngineerNode(state: AnalysisState) {
+  const systemPrompt = new SystemMessage(`You are a detail-oriented QA Engineer with deep expertise in:
+
+Designing test strategies and test plans
+
+Manual and automated testing techniques
+
+Writing precise and measurable acceptance criteria
+
+Identifying edge cases, risks, and potential regressions
+
+Conducting performance and security validation
+
+Given a Jira issue, analyze it comprehensively from a QA and test planning perspective.
+
+Instructions:
+
+Testability Assessment: Evaluate how testable the proposed changes are. Identify any components or workflows that may present challenges for effective testing (e.g., lack of observability, 3rd-party dependencies, complexity, etc.).
+
+High-Level Test Plan: Provide a structured test plan outlining:
+
+Relevant test types (unit, integration, system, end-to-end, regression, performance, security, etc.)
+
+Key scenarios or components to be validated under each test type
+
+Acceptance Criteria: Define clear, specific, and verifiable acceptance criteria that must be satisfied for this Jira issue to be considered complete and shippable.
+
+Risk Identification: Highlight major risks and edge cases that could affect quality, regressions, or user experience. Consider data integrity, scalability, performance degradation, backwards compatibility, and test coverage gaps.
+
+Your analysis should provide QA, developers, and product stakeholders with a reliable roadmap to ensure the quality and completeness of the implemented change.
+
+Input: :
+${state.context}
+`);
+
+  const humanPrompt = new HumanMessage(`Please analyze this Jira issue:
+Title: ${state.issue.metadata.title}
+Description: ${state.issue.metadata.description || 'No description provided'}
+Components: ${state.issue.metadata.components?.join(', ') || 'None'}`);
+
+  const response = await model.withStructuredOutput(qaAnalysisSchema).invoke([systemPrompt, humanPrompt]);
+
+  return {
+    qaAnalysis: `
+### Testing Perspective
+${response.analysis}
+
+### Test Plan
+${response.testPlan}
+
+### Acceptance Criteria
+${response.acceptanceCriteria.map(ac => `- ${ac}`).join('\n')}
+`,
+  };
+}
+
 async function questionExtractorNode(state: AnalysisState) {
   const prompt = PromptTemplate.fromTemplate(`
-Based on the following analyses, identify the key questions that need to be answered.
-Group related questions together and eliminate any duplicates.
-Focus on questions that bridge multiple perspectives (business, architecture, development).
+You are a cross-functional analyst responsible for synthesizing input from business, architecture, development, and QA domains.
+Your goal is to surface the most critical, high-impact questions that must be answered to move a project forward.
+
+Instructions:
+
+Input: Analyze the following four perspectives:
+
+Business Analysis: Focus only on business-relevant questions (ignore any tech-specific items).
+
+Architectural Analysis
+
+Development Analysis
+
+QA Analysis
+
+Processing:
+
+Extract all key questions from each analysis.
+
+Group and consolidate similar or duplicate questions.
+
+Highlight questions that bridge multiple disciplines (e.g., where business goals intersect with technical feasibility).
+
+Output:
+
+List the top 5–7 most important questions, sorted by priority.
+
+Prefix each question with its dominant category:
+
+[Business] for strategic, value-driven, or stakeholder-oriented concerns
+
+[Technical] for architecture, scalability, systems, or platform issues
+
+[Implementation] for development, testing, delivery, or execution concerns
+
+The goal is to create a concise list of actionable clarifications that align business intent, technical feasibility, and implementation practicality.
+
+Input Data:
 
 Business Analysis:
 {businessAnalysis}
@@ -166,8 +363,11 @@ Architectural Analysis:
 Development Analysis:
 {developmentAnalysis}
 
+QA Analysis:
+{qaAnalysis}
+
 List the top 5-7 most important questions that need to be clarified, ordered by priority.
-Each question should be prefixed with its primary category: [Business], [Technical], or [Implementation].
+Return the questions as an array of objects, each with a 'type' and 'question' field.
 `);
 
   const response = await prompt
@@ -176,6 +376,7 @@ Each question should be prefixed with its primary category: [Business], [Technic
       businessAnalysis: state.businessAnalysis,
       architecturalAnalysis: state.architecturalAnalysis,
       developmentAnalysis: state.developmentAnalysis,
+      qaAnalysis: state.qaAnalysis,
     });
 
   return {
@@ -203,6 +404,9 @@ Architectural Analysis:
 Development Analysis:
 {developmentAnalysis}
 
+QA Analysis:
+{qaAnalysis}
+
 Format your response as a concise but comprehensive overview that a stakeholder could quickly read to understand the full scope and implications of this issue.
 Focus on synthesizing insights rather than repeating individual points.
 `);
@@ -213,6 +417,7 @@ Focus on synthesizing insights rather than repeating individual points.
       businessAnalysis: state.businessAnalysis,
       architecturalAnalysis: state.architecturalAnalysis,
       developmentAnalysis: state.developmentAnalysis,
+      qaAnalysis: state.qaAnalysis,
     });
 
   return {
@@ -231,7 +436,7 @@ export interface AnalysisResponse {
   risks: string[];
 }
 
-export type AnalysisResult = Pick<AnalysisState, 'businessAnalysis' | 'architecturalAnalysis' | 'developmentAnalysis' | 'questions' | 'recommendations' | 'summary'>;
+export type AnalysisResult = Pick<AnalysisState, 'businessAnalysis' | 'architecturalAnalysis' | 'developmentAnalysis' | 'qaAnalysis' | 'questions' | 'recommendations' | 'summary'>;
 
 export async function analyzeJiraEpic(doc: JiraDocument): Promise<AnalysisResult> {
   // Initialize state
@@ -241,42 +446,45 @@ export async function analyzeJiraEpic(doc: JiraDocument): Promise<AnalysisResult
     businessAnalysis: "",
     architecturalAnalysis: "",
     developmentAnalysis: "",
+    qaAnalysis: "",
     recommendations: [],
     questions: [],
   };
 
   // Run parallel analysis
-  const [businessResult, architectResult, developerResult] = await Promise.all([
+  const [businessResult, architectResult, developerResult, qaResult] = await Promise.all([
     businessAnalystNode(state),
     architectNode(state),
     developerNode(state),
+    qaEngineerNode(state),
   ]);
 
-  // Update state with results
-  state.businessAnalysis = businessResult.businessAnalysis;
-  state.architecturalAnalysis = architectResult.architecturalAnalysis;
-  state.developmentAnalysis = developerResult.developmentAnalysis;
-  state.recommendations = [
-    ...businessResult.recommendations,
-    ...architectResult.recommendations,
-    ...developerResult.recommendations,
-  ];
+  // Combine results
+  const combinedState: AnalysisState = {
+    ...state,
+    businessAnalysis: businessResult.businessAnalysis,
+    architecturalAnalysis: architectResult.architecturalAnalysis,
+    developmentAnalysis: developerResult.developmentAnalysis,
+    qaAnalysis: qaResult.qaAnalysis,
+    recommendations: [
+      ...businessResult.recommendations,
+      ...architectResult.recommendations,
+      ...developerResult.recommendations,
+    ],
+  };
 
-  // Extract questions
-  const questionResult = await questionExtractorNode(state);
-  state.questions = questionResult.questions;
-
-  // Generate summary
-  const summaryResult = await summaryNode(state);
-  state.summary = summaryResult.summary;
+  // Extract questions and summary
+  const questionResult = await questionExtractorNode(combinedState);
+  const summaryResult = await summaryNode(combinedState);
 
   return {
-    businessAnalysis: state.businessAnalysis,
-    architecturalAnalysis: state.architecturalAnalysis,
-    developmentAnalysis: state.developmentAnalysis,
-    questions: state.questions,
-    recommendations: state.recommendations,
-    summary: state.summary,
+    businessAnalysis: combinedState.businessAnalysis,
+    architecturalAnalysis: combinedState.architecturalAnalysis,
+    developmentAnalysis: combinedState.developmentAnalysis,
+    qaAnalysis: combinedState.qaAnalysis,
+    questions: questionResult.questions,
+    recommendations: combinedState.recommendations,
+    summary: summaryResult.summary,
   };
 }
 

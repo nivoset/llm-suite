@@ -27,8 +27,8 @@ export function JiraAnalysisPanel({ jiraCard, onRefresh }: JiraAnalysisPanelProp
       ...prev,
       [index]: {
         ...prev[index] || { 
-          question: analysis?.questions[index] || '',
-          category: analysis?.questions[index].match(/\[(.*?)\]/) || ['[Other]'],
+          question: analysis?.questions[index]?.question || '',
+          category: analysis?.questions[index]?.type || 'Other',
           isEditing: true
         },
         answer
@@ -41,8 +41,8 @@ export function JiraAnalysisPanel({ jiraCard, onRefresh }: JiraAnalysisPanelProp
       ...prev,
       [index]: {
         ...prev[index] || {
-          question: analysis?.questions[index] || '',
-          category: analysis?.questions[index].match(/\[(.*?)\]/) || ['[Other]'],
+          question: analysis?.questions[index]?.question || '',
+          category: analysis?.questions[index]?.type || 'Other',
           answer: '',
           isEditing: false
         },
@@ -55,9 +55,9 @@ export function JiraAnalysisPanel({ jiraCard, onRefresh }: JiraAnalysisPanelProp
     const answersToUpdate = Object.entries(answers)
       .filter(([_, answer]) => answer.answer.trim())
       .map(([index, answer]) => ({
-        question: analysis!.questions[Number(index)].replace(/\[(.*?)\]\s*/, ''),
+        question: analysis!.questions[Number(index)].question,
         answer: answer.answer.trim(),
-        category: (analysis!.questions[Number(index)].match(/\[(.*?)\]/) || ['[Other]'])[0].replace(/[\[\]]/g, '')
+        category: analysis!.questions[Number(index)].type,
       }));
 
     if (answersToUpdate.length === 0) return;
@@ -135,22 +135,20 @@ export function JiraAnalysisPanel({ jiraCard, onRefresh }: JiraAnalysisPanelProp
           <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-transparent">
             <ul className="space-y-6">
               {analysis.questions.map((q, i) => {
-                const [category] = q.match(/\[(.*?)\]/) || ['[Other]'];
-                const question = q.replace(/\[(.*?)\]\s*/, '');
                 const answer = answers[i];
 
                 return (
                   <li key={i} className="space-y-3">
                     <div className="flex items-start gap-3">
                       <span className={`inline-block px-2 py-1 text-xs font-medium rounded ${
-                        category.includes('Business') ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' :
-                        category.includes('Technical') ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300' :
-                        category.includes('Implementation') ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300' :
+                        q.type.includes('Business') ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' :
+                        q.type.includes('Technical') ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300' :
+                        q.type.includes('Implementation') ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300' :
                         'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
                       }`}>
-                        {category.replace(/[\[\]]/g, '')}
+                        {q.type}
                       </span>
-                      <span className="text-slate-700 dark:text-slate-300">{question}</span>
+                      <span className="text-slate-700 dark:text-slate-300">{q.question}</span>
                       <button
                         onClick={() => toggleAnswerEdit(i)}
                         className="ml-auto text-sm text-blue-600 dark:text-blue-400 hover:underline"
@@ -215,6 +213,16 @@ export function JiraAnalysisPanel({ jiraCard, onRefresh }: JiraAnalysisPanelProp
             </div>
           </div>
         </section>
+
+        {analysis.qaAnalysis && (
+          <section>
+            <h2 className="text-2xl font-semibold mb-4 text-slate-900 dark:text-slate-100">Tester's Perspective</h2>
+            <div className="bg-cyan-50 dark:bg-cyan-900/30 p-4 rounded-lg border border-cyan-100 dark:border-transparent">
+              <div className="prose dark:text-slate-300 max-w-none" dangerouslySetInnerHTML={{ __html: analysis.qaAnalysis }} />
+            </div>
+          </section>
+        )}
+
         {/* Executive Summary section */}
         <section>
           <h2 className="text-2xl font-semibold mb-4 text-slate-900 dark:text-slate-100">Executive Summary</h2>
