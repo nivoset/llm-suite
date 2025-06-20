@@ -15,7 +15,7 @@ export const qaAnalysisSchema = z.object({
 
 export const questionsSchema = z.object({
   questions: z.array(z.object({
-    type: z.string().describe("The primary category of the question. Must be one of: Business, Technical, Implementation."),
+    type: z.string().describe("The primary category of the question. Must be one of: Business, Technical, Implementation, Testing."),
     question: z.string().describe("The key question that needs to be answered.")
   })).describe("An array of 5-7 key questions that need to be answered, ordered by priority.")
 }); 

@@ -1,4 +1,3 @@
-
 import { PromptTemplate } from "@langchain/core/prompts";
 import { model } from "../model";
 import { questionsSchema } from '../schemas';
@@ -34,7 +33,6 @@ Return the questions as an array of objects, each with a 'type' and 'question' f
       developmentAnalysis: state.developmentAnalysis,
       qaAnalysis: state.qaAnalysis,
     });
-
   return {
     questions: response.questions,
   };

@@ -52,12 +52,12 @@ export function JiraAnalysisPanel({ jiraCard, onRefresh }: JiraAnalysisPanelProp
   };
 
   const handleUpdateAllAnswers = async () => {
-    const answersToUpdate = Object.entries(answers)
-      .filter(([_, answer]) => answer.answer.trim())
-      .map(([index, answer]) => ({
-        question: analysis!.questions[Number(index)].question,
+    const answersToUpdate = Object.values(answers)
+      .filter((answer) => answer.answer.trim())
+      .map((answer) => ({
+        question: answer.question,
         answer: answer.answer.trim(),
-        category: analysis!.questions[Number(index)].type,
+        category: answer.category,
       }));
 
     if (answersToUpdate.length === 0) return;

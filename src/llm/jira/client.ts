@@ -33,8 +33,13 @@ class JiraClient {
       const error = await response.json().catch(() => ({ message: 'Unknown error' }));
       throw new Error(`Jira API Error: ${error.message || response.statusText}`);
     }
+    
+    if (response.status === 200) {
+      return response.json();
+    } else {
+      return response.text() as unknown as T;
+    }
 
-    return response.json();
   }
 
   async getIssue(issueKey: string, expand: string[] = []): Promise<any> {

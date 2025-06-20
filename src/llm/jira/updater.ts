@@ -4,6 +4,7 @@ import { SystemMessage, HumanMessage } from '@langchain/core/messages';
 import { model } from '../model';
 import { updateIssue, addComment } from './client';
 import type { JiraDocument } from '~/types/jira';
+import { z } from 'zod'
 
 interface QuestionAnswer {
   question: string;
@@ -11,15 +12,17 @@ interface QuestionAnswer {
   category: string;
 }
 
-export async function updateJiraFromAnswers(jiraCard: JiraDocument, answers: QuestionAnswer[]) {
-  // Define schema inside the function to avoid exporting it
-  const updateSchema = {
-    description: "string",
-    comments: "string[]",
-    fields: "Record<string, any>"
-  };
+const updateSchema = z.object({
+  description: z.string().nullish().describe('The updated description of the issue, use atlassian markdown for all formatting.'),
+  comments: z.array(z.string()).nullish().describe('An array of comments to add to the issue.'),
+  fields: z.record(z.any()).nullish().describe('An object containing the fields to update (e.g., {"summary": "New summary", "priority": {"name": "High"}}).'),
+});
 
-  const systemPrompt = new SystemMessage(`You are a Jira Integration Specialist responsible for updating Jira issues based on provided answers to key questions.
+export async function updateJiraFromAnswers(jiraCard: JiraDocument, answers: QuestionAnswer[]) {
+
+
+  const systemPrompt = new SystemMessage(`
+    You are a Jira Integration Specialist responsible for updating Jira issues based on provided answers to key questions.
 
 Your task is to:
 1. Analyze the answers to key questions about a Jira issue
@@ -49,6 +52,13 @@ Current Issue:
 Title: ${jiraCard.metadata.title}
 Key: ${jiraCard.metadata.key}
 Description: ${jiraCard.metadata.description || 'No description provided'}
+Valid fields: ${Object.keys(jiraCard.metadata.rawFields).join(', ')}
+
+Formatting:
+- Format your output using Atlassian Markdown syntax (e.g., *italic*, **bold**, \`monospace\`, ||table headers||, etc.).
+- Use bullet lists (-), numbered lists (#), and headings (h1. h2. h3.) where appropriate.
+- Use gherkin for all acceptance criteria.
+- All formatting should be done using atlassian markdown syntax.
 
 Provided Answers:
 ${answersText}
@@ -64,11 +74,11 @@ ${answersText}
     // Update description and fields
     await updateIssue(jiraCard.metadata.key, {
       description: response.description,
-      ...response.fields
+      // ...response.fields,
     });
 
     // Add comments
-    for (const comment of response.comments) {
+    for (const comment of response.comments || []) {
       await addComment(jiraCard.metadata.key, comment);
     }
 

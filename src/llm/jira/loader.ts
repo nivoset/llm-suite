@@ -126,6 +126,7 @@ ${fields.parent?.key ? `Parent Epic: ${fields.parent.key} - ${fields.parent.fiel
         return {
           pageContent: content,
           metadata: {
+            epic,
             id: issue.id,
             key: issue.key,
             title: fields.summary,

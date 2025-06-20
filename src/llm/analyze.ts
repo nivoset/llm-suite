@@ -1,25 +1,35 @@
 'use server'
 
-import z from 'zod';
-import type { JiraDocument } from '../types/jira';
+import type { JiraDocument } from '~/types/jira';
 import { architectNode } from './agents/architect';
 import { businessAnalystNode } from './agents/businessAnalyst';
 import { developerNode } from './agents/developer';
 import { qaEngineerNode } from './agents/qaEngineer';
-import { questionExtractorNode } from './agents/questionExtractor';
 import { summaryNode } from './agents/summary';
 import type { AnalysisState, AnalysisResult } from './analysis-types';
-
+import { getIssue } from './jira/client';
+import { questionExtractorNode } from './agents/questionExtractor';
 
 export async function analyzeJiraEpic(doc: JiraDocument): Promise<AnalysisResult> {
+  const issueWithComments = await getIssue(doc.metadata.key, ['comment']);
+  const comments =
+    issueWithComments.fields.comment?.comments
+      .map((c: any) => `[${c.author.displayName} on ${c.created}]: ${c.body}`)
+      .join('\n\n') || 'No comments yet.';
+
+  const docWithComments: JiraDocument = {
+    ...doc,
+    pageContent: `${doc.pageContent}\n\n---COMMENTS---\n${comments}`,
+  };
+
   // Initialize state
   const state: AnalysisState = {
-    issue: doc,
-    context: "", // We'll get this from Context7 via the UI
-    businessAnalysis: "",
-    architecturalAnalysis: "",
-    developmentAnalysis: "",
-    qaAnalysis: "",
+    issue: docWithComments,
+    context: '', // We'll get this from Context7 via the UI
+    businessAnalysis: '',
+    architecturalAnalysis: '',
+    developmentAnalysis: '',
+    qaAnalysis: '',
     recommendations: [],
     questions: [],
   };
