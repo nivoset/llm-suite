@@ -22,7 +22,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       {children}
       <ReactQueryDevtools
         initialIsOpen={false}
-        buttonPosition="bottom-right"
+        buttonPosition="bottom-left"
       />
     </QueryClientProvider>
   );

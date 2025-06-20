@@ -39,10 +39,16 @@ function renderAdfContent(content: any) {
 }
 
 export function JiraCard({ doc, isDetailView = false, onRefresh, isRefreshing = false }: JiraCardProps) {
+  const handleRefreshClick = () => {
+    if (onRefresh) {
+      onRefresh();
+    }
+  };
+
   return (
-    <div className={`bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden ${isDetailView ? '' : 'hover:shadow-lg transition-shadow'}`}>
+    <div className={`bg-white dark:bg-slate-800 rounded-lg shadow-md overflow-hidden border border-slate-200 dark:border-transparent ${isDetailView ? '' : 'hover:shadow-lg transition-shadow'}`}>
       {/* Header with issue key and status */}
-      <div className="bg-blue-50 dark:bg-blue-900 p-3 flex items-center justify-between">
+      <div className="bg-blue-50 dark:bg-blue-900 p-3 flex items-center justify-between border-b border-slate-200 dark:border-transparent">
         <div className="flex items-center gap-2">
           {doc.metadata.issueTypeIcon && (
             <Image
@@ -66,18 +72,19 @@ export function JiraCard({ doc, isDetailView = false, onRefresh, isRefreshing = 
           )}
         </div>
         <div className="flex items-center gap-2">
-          <span className="px-2 py-1 text-sm rounded bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
+          <span className="px-2 py-1 text-sm rounded bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200">
             {doc.metadata.status}
           </span>
           {isDetailView && onRefresh && (
             <button
-              onClick={onRefresh}
-              className={`p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                isRefreshing ? 'animate-spin' : ''
+              onClick={handleRefreshClick}
+              disabled={isRefreshing}
+              className={`p-1 rounded-full hover:bg-slate-200 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                isRefreshing ? 'cursor-not-allowed animate-spin' : ''
               }`}
-              aria-label="Refresh card"
+              aria-label="Refresh Jira Card"
             >
-              <ArrowPathIcon className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+              <ArrowPathIcon className={`h-5 w-5 ${isRefreshing ? 'text-slate-400' : 'text-slate-600 dark:text-slate-300'}`} />
             </button>
           )}
         </div>
@@ -100,7 +107,7 @@ export function JiraCard({ doc, isDetailView = false, onRefresh, isRefreshing = 
 
       {/* Main content */}
       <div className="p-4">
-        <h2 className="text-lg font-semibold mb-3 text-gray-900 dark:text-gray-100">
+        <h2 className="text-lg font-semibold mb-3 text-slate-900 dark:text-slate-100">
           {doc.metadata.title}
         </h2>
         
@@ -113,17 +120,17 @@ export function JiraCard({ doc, isDetailView = false, onRefresh, isRefreshing = 
         {/* Child issues if this is an epic */}
         {doc.metadata.childIssues && doc.metadata.childIssues.length > 0 && (
           <div className="mt-4">
-            <h3 className="text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">Child Issues:</h3>
+            <h3 className="text-sm font-semibold mb-2 text-slate-700 dark:text-slate-300">Child Issues:</h3>
             <div className="space-y-2">
               {doc.metadata.childIssues.map((child) => (
-                <div key={child.key} className="flex items-center justify-between bg-gray-50 dark:bg-gray-700/50 rounded p-2">
+                <div key={child.key} className="flex items-center justify-between bg-slate-50 dark:bg-slate-700/50 rounded p-2 border border-slate-200 dark:border-transparent">
                   <Link
                     href={`/jira/${child.key}`}
                     className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
                   >
                     {child.key} - {child.title}
                   </Link>
-                  <span className="text-xs px-2 py-1 rounded bg-gray-100 dark:bg-gray-600">
+                  <span className="text-xs px-2 py-1 rounded bg-slate-100 dark:bg-slate-600">
                     {child.status}
                   </span>
                 </div>
@@ -133,8 +140,8 @@ export function JiraCard({ doc, isDetailView = false, onRefresh, isRefreshing = 
         )}
 
         {/* Metadata footer */}
-        <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700">
-          <div className="flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-400">
+        <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700">
+          <div className="flex flex-wrap gap-4 text-sm text-slate-600 dark:text-slate-400">
             {doc.metadata.assignee && (
               <div className="flex items-center gap-2">
                 {doc.metadata.assigneeAvatar && (
@@ -167,7 +174,7 @@ export function JiraCard({ doc, isDetailView = false, onRefresh, isRefreshing = 
                 {doc.metadata.labels.map((label) => (
                   <span
                     key={label}
-                    className="px-2 py-0.5 text-xs rounded-full bg-gray-100 dark:bg-gray-700"
+                    className="px-2 py-0.5 text-xs rounded-full bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-transparent"
                   >
                     {label}
                   </span>
