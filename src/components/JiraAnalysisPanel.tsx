@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useJiraAnalysis } from '~/hooks/useJiraAnalysis';
 import { updateJiraFromAnswers } from '~/llm/jira/updater';
 import type { JiraDocument } from '~/types/jira';
+import { AnalysisSkeleton } from './AnalysisSkeleton';
 
 interface JiraAnalysisPanelProps {
   jiraCard: JiraDocument;
@@ -91,11 +92,7 @@ export function JiraAnalysisPanel({ jiraCard, onRefresh }: JiraAnalysisPanelProp
   };
 
   if (isAnalysisLoading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900 dark:border-slate-100"></div>
-      </div>
-    );
+    return <AnalysisSkeleton />;
   }
 
   if (!analysis) {
