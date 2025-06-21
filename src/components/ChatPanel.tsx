@@ -3,6 +3,7 @@
 import { useRef, useEffect } from 'react';
 import type { JiraDocument } from '~/types/jira';
 import type { Message, StarterPrompt } from '~/types/chat';
+import { Markdown } from './Markdown';
 
 interface ChatPanelProps {
   messages: Message[];
@@ -74,7 +75,7 @@ export function ChatPanel({
                   : 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100'
               }`}
             >
-              {m.content}
+              <Markdown markdown={m.content} />
             </div>
           </div>
         ))}

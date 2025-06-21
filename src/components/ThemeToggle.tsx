@@ -1,14 +1,21 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useLayoutEffect, useState } from 'react';
 
 export function ThemeToggle() {
   const [isDark, setIsDark] = useState(false);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    // get from local storage the desired theme
+    const theme = localStorage.getItem('theme');
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
     // This just sets the initial state of the button's icon.
     // The actual theme is set by the inline script in layout.tsx.
-    setIsDark(document.documentElement.classList.contains('dark'));
+    setIsDark(theme === 'dark');
   }, []);
 
   const toggleTheme = () => {

@@ -6,6 +6,7 @@ import type { JiraDocument } from '~/types/jira';
 import { ArrowPathIcon } from '@heroicons/react/24/outline';
 import { createElement, useState, useEffect } from 'react';
 import { updateIssue } from '~/llm/jira/client';
+import { Markdown } from './Markdown';
 
 interface JiraCardProps {
   doc: JiraDocument;
@@ -13,31 +14,6 @@ interface JiraCardProps {
   onRefresh?: () => void;
   isRefreshing?: boolean;
   onSuggestUpdate?: (newContent: string) => void;
-}
-
-function renderAdfContent(content: any) {
-  if (typeof content === 'string') {
-    return <p className="whitespace-pre-wrap">{content}</p>;
-  }
-
-  if (content && content.type === 'doc' && Array.isArray(content.content)) {
-    // This is a simplified renderer. It will just extract text.
-    const textContent = content.content.map((block: any) => {
-      if (block.type === 'paragraph' && Array.isArray(block.content)) {
-        return block.content.map((inline: any) => {
-          if (inline.type === 'text') {
-            return inline.text;
-          }
-          return '';
-        }).join('');
-      }
-      return '';
-    }).join('\\n');
-    return <p className="whitespace-pre-wrap">{textContent}</p>;
-  }
-
-  // Fallback for unknown format
-  return <p className="whitespace-pre-wrap">Unsupported description format</p>;
 }
 
 export function JiraCard({ doc, isDetailView = false, onRefresh, isRefreshing = false }: JiraCardProps) {
@@ -179,7 +155,7 @@ export function JiraCard({ doc, isDetailView = false, onRefresh, isRefreshing = 
         ) : (
           doc.metadata.description && (
             <div className="prose dark:text-slate-300 max-w-none mb-4">
-              {renderAdfContent(doc.metadata.description)}
+              <Markdown markdown={doc.metadata.description} />
             </div>
           )
         )}
