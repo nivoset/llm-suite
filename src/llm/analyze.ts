@@ -7,7 +7,6 @@ import { developerNode } from './agents/developer';
 import { qaEngineerNode } from './agents/qaEngineer';
 import { summaryNode } from './agents/summary';
 import type { AnalysisState, AnalysisResult } from './analysis-types';
-import { getIssue } from './jira/client';
 import { questionExtractorNode } from './agents/questionExtractor';
 
 export async function analyzeJiraEpic(doc: JiraIssue): Promise<AnalysisResult> {
