@@ -1,4 +1,5 @@
 import type { JiraConfig, CustomField, JiraFieldType } from './types';
+import type { JiraProjectLoaderParams } from "@langchain/community/document_loaders/web/jira";
 
 class JiraClient {
   private host: string;
@@ -196,4 +197,83 @@ export async function getProjects() {
 export async function getEpics(projectKey: string) {
   const client = await getJiraClient();
   return client.getEpics(projectKey);
+}
+
+// Define a basic JiraIssue interface based on what the API returns.
+// This can be expanded later if more detailed typing is needed.
+export interface JiraIssue {
+  id: string;
+  key: string;
+  expand: string;
+  self: string;
+  fields: Record<string, any>;
+}
+
+/**
+ * Fetches Jira issues based on a JQL query.
+ * This function communicates directly with the Jira REST API.
+ *
+ * @param jql The JQL query string.
+ * @param params Optional parameters to control the fetch, like `limitPerRequest`.
+ * @returns An async generator that yields arrays of Jira issues.
+ */
+export async function* fetchJiraIssues(
+  jql: string,
+  params?: Omit<JiraProjectLoaderParams, 'host'|'username'|'accessToken'>,
+): AsyncGenerator<JiraIssue[]> {
+  const { limitPerRequest = 50 } = params || {};
+
+  const host = process.env.JIRA_HOST;
+  const username = process.env.JIRA_USERNAME;
+  const accessToken = process.env.JIRA_ACCESS_TOKEN;
+
+  if (!host || !username || !accessToken) {
+    throw new Error('Jira host, username, and access token are required and must be set in environment variables.');
+  }
+
+  // Ensure the host URL is properly formatted
+  const formattedHost = host.startsWith('http') ? host : `https://${host}`;
+
+  const auth = Buffer.from(`${username}:${accessToken}`).toString('base64');
+  const headers = {
+    Authorization: `Basic ${auth}`,
+    'Content-Type': 'application/json',
+  };
+
+  const fields = '*all';
+  let startAt = 0;
+  let total = -1;
+
+  while (total === -1 || startAt < total) {
+    const url = new URL(`${formattedHost}/rest/api/2/search`);
+    url.searchParams.set('jql', jql);
+    url.searchParams.set('startAt', startAt.toString());
+    url.searchParams.set('maxResults', limitPerRequest.toString());
+    url.searchParams.set('fields', fields);
+
+    const res = await fetch(url.toString(), { headers });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error('Jira API Error:', errorText);
+      throw new Error(
+        `Failed to fetch from Jira: ${res.status} ${errorText}`,
+      );
+    }
+
+    const json = await res.json();
+    if (total === -1) {
+      total = json.total;
+    }
+    const issues = json.issues as JiraIssue[];
+    if (!issues) {
+      return;
+    }
+    yield issues;
+
+    startAt += issues.length;
+    if (issues.length === 0) {
+      break; 
+    }
+  }
 } 

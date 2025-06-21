@@ -55,8 +55,8 @@ export default function JiraDashboard() {
   });
 
   const sortedCards = jiraCards?.slice().sort((a, b) => {
-    const aIsEpic = a.metadata.issueType === 'Epic';
-    const bIsEpic = b.metadata.issueType === 'Epic';
+    const aIsEpic = a.fields.issuetype.name === 'Epic';
+    const bIsEpic = b.fields.issuetype.name === 'Epic';
 
     if (aIsEpic && !bIsEpic) {
       return -1;
@@ -66,12 +66,12 @@ export default function JiraDashboard() {
     }
 
     try {
-      const aNum = parseInt(a.metadata.key.split('-')[1], 10);
-      const bNum = parseInt(b.metadata.key.split('-')[1], 10);
+      const aNum = parseInt(a.key.split('-')[1], 10);
+      const bNum = parseInt(b.key.split('-')[1], 10);
       return aNum - bNum;
     } catch (e) {
       // Fallback to string comparison if key format is unexpected
-      return a.metadata.key.localeCompare(b.metadata.key);
+      return a.key.localeCompare(b.key);
     }
   });
 
@@ -144,7 +144,7 @@ export default function JiraDashboard() {
           ) : jiraCards && jiraCards.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {sortedCards && sortedCards.map((card) => (
-                <JiraCard key={card.metadata.key} doc={card} />
+                <JiraCard key={card.key} doc={card} />
               ))}
             </div>
           ) : (

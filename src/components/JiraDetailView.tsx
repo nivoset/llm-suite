@@ -16,17 +16,17 @@ interface JiraDetailViewProps {
 export function JiraDetailView({ issueKey }: JiraDetailViewProps) {
   const [activeTab, setActiveTab] = useQueryParameter('tab', 'chat');
 
-  const { data: jiraCards, isLoading, refetch: refetchCard } = useQuery({
-    queryKey: ['jira-cards', 'SCRUM'],
+  const { data: jiraCard, isLoading, refetch: refetchCard } = useQuery({
+    queryKey: ['jira-card', issueKey],
     queryFn: async () => {
       const docs = await loadJiraDocuments({ 
-        projectKey: 'SCRUM',
+        jql: `key = "${issueKey}"`,
+        projectKey: issueKey.split('-')[0],
       });
-      return docs;
+      return docs[0];
     },
+    enabled: !!issueKey,
   });
-
-  const jiraCard = jiraCards?.find(doc => doc.metadata.key === issueKey);
 
   const handleRefresh = async () => {
     await refetchCard();

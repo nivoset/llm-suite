@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
-import type { JiraDocument } from '~/types/jira';
+import type { JiraIssue } from '~/llm/jira';
 
 export function useJiraCards({ projectKey, epicKey }: { projectKey: string | null, epicKey: string | null }) {
-  return useQuery<JiraDocument[], Error>({
+  return useQuery<JiraIssue[], Error>({
     queryKey: ['jira-cards', projectKey, epicKey],
     queryFn: async () => {
       if (!projectKey) {
