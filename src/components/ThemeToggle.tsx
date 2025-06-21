@@ -16,11 +16,9 @@ export function ThemeToggle() {
     setIsDark(newIsDark);
     if (newIsDark) {
       document.documentElement.classList.add('dark');
-      document.documentElement.classList.remove('light');
       localStorage.setItem('theme', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
-      document.documentElement.classList.add('light');
       localStorage.setItem('theme', 'light');
     }
   };
@@ -38,7 +36,7 @@ export function ThemeToggle() {
             viewBox="0 0 24 24"
             strokeWidth={1.5}
             stroke="currentColor"
-            className="w-6 h-6 text-yellow-500 dark:hidden"
+            className="w-6 h-6 text-yellow-700 dark:hidden"
             aria-hidden="true"
           >
             <path
