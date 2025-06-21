@@ -1,7 +1,6 @@
 import { DynamicStructuredTool } from '@langchain/core/tools';
 import { getIssue, addComment, updateIssue } from '~/llm/jira/client';
 import { z } from 'zod';
-import { webBrowserTool } from './web';
 
 export const getJiraIssueCommentsTool = new DynamicStructuredTool({
   name: 'get_jira_issue_comments',
@@ -74,4 +73,4 @@ export const updateJiraIssueContentTool = new DynamicStructuredTool({
   }
 });
 
-export const jiraTools = [getJiraIssueCommentsTool, addJiraCommentTool, updateJiraIssueTool, updateJiraIssueContentTool, webBrowserTool];
+export const jiraTools = [getJiraIssueCommentsTool, addJiraCommentTool, updateJiraIssueTool, updateJiraIssueContentTool];

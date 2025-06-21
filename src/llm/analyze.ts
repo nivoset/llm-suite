@@ -1,6 +1,6 @@
 'use server'
 
-import type { JiraDocument } from '~/types/jira';
+import type { JiraIssue } from '~/llm/jira';
 import { architectNode } from './agents/architect';
 import { businessAnalystNode } from './agents/businessAnalyst';
 import { developerNode } from './agents/developer';
@@ -10,21 +10,35 @@ import type { AnalysisState, AnalysisResult } from './analysis-types';
 import { getIssue } from './jira/client';
 import { questionExtractorNode } from './agents/questionExtractor';
 
-export async function analyzeJiraEpic(doc: JiraDocument): Promise<AnalysisResult> {
-  const issueWithComments = await getIssue(doc.metadata.key, ['comment']);
+export async function analyzeJiraEpic(doc: JiraIssue): Promise<AnalysisResult> {
   const comments =
-    issueWithComments.fields.comment?.comments
-      .map((c: any) => `[${c.author.displayName} on ${c.created}]: ${c.body}`)
+    doc.fields.comment?.comments
+      ?.map((c: any) => `[${c.author.displayName} on ${c.created}]: ${c.body}`)
       .join('\n\n') || 'No comments yet.';
 
-  const docWithComments: JiraDocument = {
-    ...doc,
-    pageContent: `${doc.pageContent}\n\n---COMMENTS---\n${comments}`,
-  };
+  const pageContent = `
+Issue Key: ${doc.key}
+Summary: ${doc.fields.summary}
+${doc.fields.description ? `Description: ${doc.fields.description}` : ''}
+Status: ${doc.fields.status?.name || 'To Do'}
+Priority: ${doc.fields.priority?.name || 'None'}
+Assignee: ${doc.fields.assignee?.displayName || 'Unassigned'}
+Reporter: ${doc.fields.reporter?.displayName || 'Unknown'}
+
+---COMMENTS---
+${comments}
+  `.trim();
 
   // Initialize state
   const state: AnalysisState = {
-    issue: docWithComments,
+    issue: {
+      pageContent,
+      metadata: { // Create a minimal metadata object for the agents
+        key: doc.key,
+        title: doc.fields.summary,
+        issueUrl: `${process.env.JIRA_HOST}/browse/${doc.key}`,
+      }
+    },
     context: '', // We'll get this from Context7 via the UI
     businessAnalysis: '',
     architecturalAnalysis: '',

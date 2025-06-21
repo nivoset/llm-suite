@@ -1,5 +1,9 @@
-import { JiraProjectLoader } from "@langchain/community/document_loaders/web/jira";
+import { JiraProjectLoader, type JiraProjectLoaderParams } from "@langchain/community/document_loaders/web/jira";
 import type { JiraDocument } from "~/types/jira";
+
+interface CustomJiraLoaderParams extends JiraProjectLoaderParams {
+  epicKey?: string | null;
+}
 
 // Define types for Jira API responses
 interface JiraComponent {
@@ -11,6 +15,11 @@ interface JiraUser {
   displayName: string;
   emailAddress: string;
   avatarUrls: Record<string, string>;
+  accountId: string;
+  accountType: string;
+  active: boolean;
+  self: string;
+  timeZone: string;
 }
 
 interface JiraStatus {
@@ -32,6 +41,32 @@ interface JiraIssueType {
   iconUrl?: string;
 }
 
+interface JiraIssueLink {
+  id: string;
+  self: string;
+  type: {
+    id: string;
+    name: string;
+    inward: string;
+    outward: string;
+    self: string;
+  };
+  inwardIssue?: JiraBriefIssue;
+  outwardIssue?: JiraBriefIssue;
+}
+
+interface JiraBriefIssue {
+  id: string;
+  key: string;
+  self: string;
+  fields: {
+    summary: string;
+    status: JiraStatus;
+    priority: JiraPriority;
+    issuetype: JiraIssueType;
+  }
+}
+
 interface JiraFields {
   summary: string;
   description?: string;
@@ -40,25 +75,113 @@ interface JiraFields {
   reporter?: JiraUser;
   priority?: JiraPriority;
   labels?: string[];
-  created?: string;
-  updated?: string;
+  created: string;
+  updated: string;
   duedate?: string;
   components?: JiraComponent[];
   issuetype?: JiraIssueType;
-  parent?: {
-    key: string;
-    fields: JiraFields;
-  };
+  parent?: JiraBriefIssue;
   [key: string]: any;
+  issuelinks: JiraIssueLink[];
+  progress: any; 
+  project: any;
+  creator: JiraUser;
+  subtasks: any[];
 }
 
-interface JiraIssue {
+export interface JiraIssue {
   id: string;
   key: string;
+  expand: string;
+  self: string;
   fields: JiraFields;
 }
 
+export async function* fetchJira(
+  jql: string,
+  params?: Omit<JiraProjectLoaderParams, 'host'|'username'|'accessToken'>,
+): AsyncGenerator<JiraIssue[]> {
+  const { limitPerRequest = 50 } = params || {};
+
+  const host = process.env.JIRA_HOST;
+  const username = process.env.JIRA_USERNAME;
+  const accessToken = process.env.JIRA_ACCESS_TOKEN;
+
+  if (!host || !username || !accessToken) {
+    throw new Error('Jira host, username, and accessToken are required and must be set in environment variables.');
+  }
+
+  const auth = Buffer.from(`${username}:${accessToken}`).toString('base64');
+  const headers = {
+    Authorization: `Basic ${auth}`,
+    'Content-Type': 'application/json',
+  };
+
+  const fields = '*all';
+  let startAt = 0;
+  let total = -1;
+  // Make sure the host URL is properly formatted
+  const formattedHost = host.startsWith('http') ? host : `https://${host}`;
+
+
+  while (total === -1 || startAt < total) {
+    const url = new URL(`${formattedHost}/rest/api/2/search`);
+    url.searchParams.set('jql', jql);
+    url.searchParams.set('startAt', startAt.toString());
+    url.searchParams.set('maxResults', limitPerRequest.toString());
+    url.searchParams.set('fields', fields);
+
+    const res = await fetch(url.toString(), { headers });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error('Jira API Error:', errorText);
+      throw new Error(
+        `Failed to fetch from Jira: ${res.status} ${errorText}`,
+      );
+    }
+
+    const json = await res.json();
+    if (total === -1) {
+      total = json.total;
+    }
+    const issues = json.issues as JiraIssue[];
+    if (!issues) {
+      return;
+    }
+    yield issues;
+
+    startAt += issues.length;
+    if (issues.length === 0) {
+      break; 
+    }
+  }
+}
+
 export class CustomJiraLoader extends JiraProjectLoader {
+  epicKey?: string | null;
+  private loaderParams: Omit<CustomJiraLoaderParams, 'host'|'username'|'accessToken'>;
+
+  constructor(params: Omit<CustomJiraLoaderParams, 'host'|'username'|'accessToken'>) {
+    const host = process.env.JIRA_HOST;
+    if (!host) {
+      throw new Error('JIRA_HOST environment variable not set');
+    }
+    super({
+      ...params,
+      host,
+      username: process.env.JIRA_USERNAME!,
+      accessToken: process.env.JIRA_ACCESS_TOKEN!,
+    });
+    this.loaderParams = params;
+    this.epicKey = params.epicKey;
+  }
+
+  async fetch(query: string) {
+    return fetchJira(this.loaderParams, query);
+  }
+
+
   async load(): Promise<JiraDocument[]> {
     console.log('CustomJiraLoader: Starting to load issues...');
     try {
