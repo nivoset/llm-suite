@@ -8,13 +8,19 @@ const username = process.env.JIRA_USERNAME!;
 const accessToken = process.env.JIRA_ACCESS_TOKEN!;
 
 export async function loadJiraDocuments(
-  props: Omit<JiraProjectLoaderParams, "host" | "username" | "accessToken">
+  props: Omit<JiraProjectLoaderParams, "host" | "username" | "accessToken"> & { epicKey?: string | null }
 ): Promise<JiraDocument[]> {
+  const { projectKey, epicKey, ...rest } = props;
+  let finalProjectKey = projectKey;
+  if (epicKey && projectKey) {
+    finalProjectKey = `${projectKey}" AND "Epic Link" = "${epicKey}`;
+  }
+
 
     console.log("Jira Configuration:", {
       host,
       username,
-      projectKey: props.projectKey,
+      projectKey: finalProjectKey,
       // Don't log the full access token
       hasAccessToken: !!accessToken
     });
@@ -34,7 +40,8 @@ export async function loadJiraDocuments(
     host: formattedHost,
     username,
     accessToken,
-    ...props
+    ...rest,
+    projectKey: finalProjectKey,
   });
 
   try {
