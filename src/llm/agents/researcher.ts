@@ -1,5 +1,5 @@
 import z from "zod";
-import { model } from "../model";
+import { model, thinkingModel } from "../model";
 import { addToContext } from "../context";
 import { PromptTemplate } from "@langchain/core/prompts";
 import { pipeline } from "../../pipeline";
@@ -63,7 +63,7 @@ const researcherNode = async (state: ResearcherState) => {
     to address the requirements and potential challenges of this issue?
   `);
 
-  const { researchTopics, questions } = await prompt.pipe(model.withStructuredOutput(z.object({
+  const { researchTopics, questions } = await prompt.pipe(thinkingModel.withStructuredOutput(z.object({
     researchTopics: z.string().array().describe("topics to research to be used in duckduckgo search"),
     questions: questionSchema.array().describe("the questions that need to be answered to complete the jira issue"),
   }))).invoke({
@@ -164,7 +164,7 @@ Unanswered Questions:
 
 Generate a list of acceptance criteria based on these questions.`;
 
-  const response = await model.withStructuredOutput(gherkinSchema).invoke(prompt);
+  const response = await thinkingModel.withStructuredOutput(gherkinSchema).invoke(prompt);
 
   const updatedResults: z.infer<typeof researchResultsSchema> = {
     analysis: results.analysis,

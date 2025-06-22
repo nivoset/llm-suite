@@ -1,5 +1,5 @@
 'use server'
-import { model } from '~/llm/model';
+import { model, thinkingModel } from '~/llm/model';
 import { PromptTemplate } from '@langchain/core/prompts';
 import { RunnableWithMessageHistory } from '@langchain/core/runnables';
 import { StringOutputParser } from '@langchain/core/output_parsers';
@@ -42,7 +42,7 @@ User Message:
 `);
 
 
-const chain = prompt.pipe(model.bindTools(
+const chain = prompt.pipe(thinkingModel.bindTools(
   [... jiraTools]
 )).pipe(new StringOutputParser());
 

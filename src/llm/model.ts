@@ -7,6 +7,11 @@ export const model = new ChatOpenAI({
   // model: ''
 })
 
+export const thinkingModel = new ChatOpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+  model: 'gpt-4o-mini',
+})
+
 export const modelWithTools = model.bindTools([
     webBrowserTool,
     webSearchTool,

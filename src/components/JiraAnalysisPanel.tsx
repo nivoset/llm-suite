@@ -173,25 +173,25 @@ export function JiraAnalysisPanel({ jiraCard, onRefresh }: JiraAnalysisPanelProp
           <h2 className="text-2xl font-semibold mb-4 text-slate-900 dark:text-slate-100">Detailed Analysis</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {analysis.analysis.business && (
-              <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg border border-blue-100 dark:border-transparent">
+              <div className="bg-blue-50 dark:bg-slate-800 p-4 rounded-lg border border-blue-100 dark:border-slate-700">
                 <h3 className="text-lg font-medium mb-2 text-blue-700 dark:text-blue-300">Business Impact</h3>
                 <Markdown markdown={analysis.analysis.business} />
               </div>
             )}
             {analysis.analysis.architect && (
-            <div className="bg-purple-50 dark:bg-purple-900/30 p-4 rounded-lg border border-purple-100 dark:border-transparent">
+            <div className="bg-purple-50 dark:bg-slate-800 p-4 rounded-lg border border-purple-100 dark:border-slate-700">
               <h3 className="text-lg font-medium mb-2 text-purple-700 dark:text-purple-300">Architecture</h3>
               <Markdown markdown={analysis.analysis.architect} />
             </div>
             )}
             {analysis.analysis.developer && (
-            <div className="bg-green-50 dark:bg-green-900/30 p-4 rounded-lg border border-green-100 dark:border-transparent">
+            <div className="bg-green-50 dark:bg-slate-800 p-4 rounded-lg border border-green-100 dark:border-slate-700">
               <h3 className="text-lg font-medium mb-2 text-green-700 dark:text-green-300">Implementation</h3>
               <Markdown markdown={analysis.analysis.developer} />
             </div>
             )}
             {analysis.analysis.qa && (
-            <div className="bg-cyan-50 dark:bg-cyan-900/30 p-4 rounded-lg border border-cyan-100 dark:border-transparent">
+            <div className="bg-cyan-50 dark:bg-slate-800 p-4 rounded-lg border border-cyan-100 dark:border-slate-700">
               <h3 className="text-lg font-medium mb-2 text-cyan-700 dark:text-cyan-300">Tester's Perspective</h3>
               <Markdown markdown={analysis.analysis.qa} />
             </div>
@@ -202,7 +202,7 @@ export function JiraAnalysisPanel({ jiraCard, onRefresh }: JiraAnalysisPanelProp
         {analysis.researchTopics && (
         <section>
           <h2 className="text-2xl font-semibold mb-4 text-slate-900 dark:text-slate-100">Research Topics</h2>
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/30 dark:to-purple-900/30 p-6 rounded-lg border border-slate-200 dark:border-transparent">
+          <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-700">
             <p className="text-slate-700 dark:text-slate-300 text-lg leading-relaxed">
               <Markdown markdown={analysis.researchTopics.join("\n")} />
             </p>

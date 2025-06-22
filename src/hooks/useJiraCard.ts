@@ -1,8 +1,8 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { CardInput } from '~/llm/jira/cards';
-import JiraCardService from '~/llm/jira/cards';
+import { CardInput } from '~/llm/jira/card-types';
+import * as JiraCardService from '~/llm/jira/cards';
 
 export function useJiraCard(issueKey?: string) {
   const queryClient = useQueryClient();

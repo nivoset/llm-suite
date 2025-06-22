@@ -1,10 +1,10 @@
 'use server';
 
 import { SystemMessage, HumanMessage } from '@langchain/core/messages';
-import { model } from '../model';
+import { model, thinkingModel } from '../model';
 import { updateIssue, addComment } from './client';
 import { type JiraIssue } from '~/llm/jira';
-import { z } from 'zod'
+import { z } from 'zod';
 
 interface QuestionAnswer {
   question: string;
@@ -13,9 +13,8 @@ interface QuestionAnswer {
 }
 
 const updateSchema = z.object({
-  description: z.string().nullish().describe('The updated description of the issue, use atlassian markdown for all formatting.'),
+  description: z.string().nullish().describe('The updated description of the issue, in Atlassian markdown. This should incorporate all new information and changes based on the answers.'),
   comments: z.array(z.string()).nullish().describe('An array of comments to add to the issue.'),
-  fields: z.record(z.any()).nullish().describe('An object containing the fields to update (e.g., {"summary": "New summary", "priority": {"name": "High"}}).'),
 });
 
 export async function updateJiraFromAnswers(jiraCard: JiraIssue, answers: QuestionAnswer[]) {
@@ -26,20 +25,18 @@ export async function updateJiraFromAnswers(jiraCard: JiraIssue, answers: Questi
 
 Your task is to:
 1. Analyze the answers to key questions about a Jira issue
-2. Generate appropriate updates to the issue description and fields
-3. Create relevant comments to document the updates
-4. Ensure all important information is properly integrated
+2. Generate an updated description for the issue that incorporates the new information.
+3. Create relevant comments to document the updates.
 
 Focus on:
 - Maintaining existing issue structure and formatting
-- Adding new information in a clear, organized way
-- Creating concise but informative comments
-- Preserving existing content while adding new insights
+- Adding new information into the description in a clear, organized way.
+- Creating concise but informative comments.
+- Preserving existing content while adding new insights.
 
 Output a structured response with:
-- Updated description (incorporating new information)
-- Comments to be added (explaining changes)
-- Fields to be updated (if applicable)
+- The complete, updated description for the issue.
+- An array of comments to be added.
 `);
 
   const answersText = answers.map(a => 
@@ -52,7 +49,6 @@ Current Issue:
 Title: ${jiraCard.fields.summary}
 Key: ${jiraCard.key}
 Description: ${jiraCard.fields.description || 'No description provided'}
-Valid fields: ${Object.keys(jiraCard.fields).join(', ')}
 
 Formatting:
 - Format your output using Atlassian Markdown syntax (e.g., *italic*, **bold**, \`monospace\`, ||table headers||, etc.).
@@ -64,7 +60,7 @@ Provided Answers:
 ${answersText}
 `);
 
-  const response = await model.withStructuredOutput(updateSchema).invoke([
+  const response = await thinkingModel.withStructuredOutput(updateSchema).invoke([
     systemPrompt,
     humanPrompt
   ]);
@@ -72,10 +68,11 @@ ${answersText}
   // Apply the updates
   try {
     // Update description and fields
-    await updateIssue(jiraCard.key, {
-      description: response.description,
-      ...response.fields,
-    });
+    if (response.description) {
+      await updateIssue(jiraCard.key, {
+        description: response.description
+      });
+    }
 
     // Add comments
     for (const comment of response.comments || []) {
