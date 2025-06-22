@@ -79,7 +79,7 @@ ${relatedSearches.map((result) => `- ${result.text} (${result.href})`).join('\n'
   },
   {
     name: 'web-search-extractor',
-    description: "Performs a web search and extracts text and links from all list items (`<li>`) with a `data-bm` attribute from the results page.",
+    description: "Performs a web search and extracts text and links from all list items to be used in follow up questions for following up and using the information in the follow up questions.",
     schema: z.object({
       query: z.string().describe('The search query to get the specific information'),
     }),
