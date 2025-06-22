@@ -3,7 +3,7 @@
 import { SystemMessage, HumanMessage } from '@langchain/core/messages';
 import { model } from '../model';
 import { updateIssue, addComment } from './client';
-import type { JiraDocument } from '~/types/jira';
+import { type JiraIssue } from '~/llm/jira';
 import { z } from 'zod'
 
 interface QuestionAnswer {
@@ -18,7 +18,7 @@ const updateSchema = z.object({
   fields: z.record(z.any()).nullish().describe('An object containing the fields to update (e.g., {"summary": "New summary", "priority": {"name": "High"}}).'),
 });
 
-export async function updateJiraFromAnswers(jiraCard: JiraDocument, answers: QuestionAnswer[]) {
+export async function updateJiraFromAnswers(jiraCard: JiraIssue, answers: QuestionAnswer[]) {
 
 
   const systemPrompt = new SystemMessage(`
@@ -49,10 +49,10 @@ Output a structured response with:
   const humanPrompt = new HumanMessage(`Please process these answers and generate Jira updates:
 
 Current Issue:
-Title: ${jiraCard.metadata.title}
-Key: ${jiraCard.metadata.key}
-Description: ${jiraCard.metadata.description || 'No description provided'}
-Valid fields: ${Object.keys(jiraCard.metadata.rawFields).join(', ')}
+Title: ${jiraCard.fields.summary}
+Key: ${jiraCard.key}
+Description: ${jiraCard.fields.description || 'No description provided'}
+Valid fields: ${Object.keys(jiraCard.fields).join(', ')}
 
 Formatting:
 - Format your output using Atlassian Markdown syntax (e.g., *italic*, **bold**, \`monospace\`, ||table headers||, etc.).
@@ -72,14 +72,14 @@ ${answersText}
   // Apply the updates
   try {
     // Update description and fields
-    await updateIssue(jiraCard.metadata.key, {
+    await updateIssue(jiraCard.key, {
       description: response.description,
-      // ...response.fields,
+      ...response.fields,
     });
 
     // Add comments
     for (const comment of response.comments || []) {
-      await addComment(jiraCard.metadata.key, comment);
+      await addComment(jiraCard.key, comment);
     }
 
     return true;
