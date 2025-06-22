@@ -202,7 +202,7 @@ export function JiraAnalysisPanel({ jiraCard, onRefresh }: JiraAnalysisPanelProp
         {analysis.researchTopics && (
         <section>
           <h2 className="text-2xl font-semibold mb-4 text-slate-900 dark:text-slate-100">Research Topics</h2>
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-700">
+          <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:bg-none dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-700">
             <p className="text-slate-700 dark:text-slate-300 text-lg leading-relaxed">
               <Markdown markdown={analysis.researchTopics.join("\n")} />
             </p>
