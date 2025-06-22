@@ -34,3 +34,4 @@ Components: ${state.issue.metadata.components?.join(', ') || 'None'}`);
     recommendations: [...state.recommendations, ...response.recommendations],
   };
 } 
+

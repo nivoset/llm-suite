@@ -4,7 +4,7 @@ import { z } from 'zod';
 export const analysisSchema = z.object({
   analysis: z.string().describe("Detailed analysis from the expert's perspective"),
   recommendations: z.array(z.string()).describe("List of specific recommendations"),
-  risks: z.array(z.string()).describe("List of potential risks or concerns"),
+  risks: z.array(z.string()).describe("List of potential risks or concerns").optional(),
 });
 
 export const qaAnalysisSchema = z.object({

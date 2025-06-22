@@ -8,7 +8,7 @@ interface MarkdownProps {
 
 export function Markdown({ markdown }: MarkdownProps) {
   return (
-    <div className="prose dark:prose-invert max-w-none">
+    <div className="prose dark:text-slate-100 max-w-none">
       <ReactMarkdown>{markdown}</ReactMarkdown>
     </div>
   );

@@ -4,6 +4,7 @@ import { model } from "../model";
 import type { AnalysisState } from '../analysis-types';
 import { analysisSchema } from '../schemas';
 import { PERSONAS } from '../personas';
+import './researcher'
 
 export async function architectNode(state: AnalysisState) {
   const systemPrompt = new SystemMessage(`You are a ${PERSONAS.ARCHITECT.role} with expertise in:
