@@ -5,7 +5,7 @@ import { RunnableWithMessageHistory } from '@langchain/core/runnables';
 import { StringOutputParser } from '@langchain/core/output_parsers';
 import { ChatMessageHistory } from '@langchain/community/stores/message/in_memory';
 import { jiraTools } from '~/llm/tools/jira';
-import { JiraDocument } from '~/types/jira';
+import { JiraIssue } from '../jira';
 
 const messageStore: Map<string, ChatMessageHistory> = new Map();
 
@@ -60,8 +60,8 @@ const chatWithHistory = new RunnableWithMessageHistory({
 }); 
 
 
-export const sendChatMessageAboudJiraIssue = async (sessionId: string, jiraCard: JiraDocument, message: string) => {
-  const context = `Key: ${jiraCard.metadata.key}\nTitle: ${jiraCard.metadata.title}\nStatus: ${jiraCard.metadata.status}\nDescription: ${jiraCard.pageContent}`;
+export const sendChatMessageAboudJiraIssue = async (sessionId: string, jiraCard: JiraIssue, message: string) => {
+  const context = `Key: ${jiraCard.key}\nTitle: ${jiraCard.fields.summary}\nStatus: ${jiraCard.fields.status.name}\nDescription: ${jiraCard.fields.description}`;
   
   return chatWithHistory.stream(
     {
