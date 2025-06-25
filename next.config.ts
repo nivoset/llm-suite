@@ -13,6 +13,11 @@ const config: NextConfig = {
         hostname: 'secure.gravatar.com',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'example.com',
+        pathname: '/**',
+      },
     ],
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
